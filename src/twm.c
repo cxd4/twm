@@ -613,14 +613,9 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	InitVariables - initialize twm variables
- *
- ***********************************************************************
+/**
+ * initialize twm variables
  */
-
 void
 InitVariables()
 {
@@ -783,8 +778,7 @@ CreateFonts ()
 }
 
 void
-RestoreWithdrawnLocation (tmp)
-    TwmWindow *tmp;
+RestoreWithdrawnLocation (TwmWindow *tmp)
 {
     int gravx, gravy;
     unsigned int bw, mask;
@@ -832,8 +826,7 @@ RestoreWithdrawnLocation (tmp)
 
 
 void 
-Reborder (time)
-Time time;
+Reborder (Time time)
 {
     TwmWindow *tmp;			/* temp twm window structure */
     int scrnum;
@@ -865,24 +858,8 @@ sigHandler(int sig)
     SIGNAL_RETURN;
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	Done - cleanup and exit twm
- *
- *  Returned Value:
- *	none
- *
- *  Inputs:
- *	none
- *
- *  Outputs:
- *	none
- *
- *  Special Considerations:
- *	none
- *
- ***********************************************************************
+/**
+ * cleanup and exit twm
  */
 void
 Done(XtPointer client_data, XtSignalId *si)
@@ -895,6 +872,7 @@ Done(XtPointer client_data, XtSignalId *si)
     exit(0);
 }
 
+
 /*
  * Error Handlers.  If a client dies, we'll get a BadWindow error (except for
  * GetGeometry which returns BadDrawable) for most operations that we do before
@@ -905,9 +883,7 @@ Bool ErrorOccurred = False;
 XErrorEvent LastErrorEvent;
 
 static int 
-TwmErrorHandler(dpy, event)
-    Display *dpy;
-    XErrorEvent *event;
+TwmErrorHandler(Display *dpy, XErrorEvent *event)
 {
     LastErrorEvent = *event;
     ErrorOccurred = True;
@@ -921,11 +897,8 @@ TwmErrorHandler(dpy, event)
 }
 
 
-/* ARGSUSED*/
 static int 
-CatchRedirectError(dpy, event)
-    Display *dpy;
-    XErrorEvent *event;
+CatchRedirectError(Display *dpy, XErrorEvent *event)
 {
     RedirectError = TRUE;
     LastErrorEvent = *event;
