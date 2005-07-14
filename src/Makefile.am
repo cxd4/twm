@@ -24,7 +24,7 @@ AM_YFLAGS = -d
 
 bin_PROGRAMS = twm
 
-twm_CFLAGS = $(DEP_CFLAGS) -DXVENDORNAME=\"The\ X.org\ Foundation\" -DXORG_RELEASE=\"Release\ $(VERSION)\"
+twm_CFLAGS = $(DEP_CFLAGS) -DXVENDORNAME=\"The\ X.org\ Foundation\" -DXORG_RELEASE=\"Release\ $(VERSION)\" -D_BSD_SOURCE
 twm_LDADD = $(DEP_LIBS)
 
 twm_SOURCES =   \
