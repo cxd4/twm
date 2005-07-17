@@ -63,14 +63,14 @@ twm_SOURCES =   \
 BUILT_SOURCES = gram.h deftwmrc.c
 
 deftwmrc.c:  system.twmrc
-	$(RM) $@
+	rm -f $@
 	echo '/* ' >>$@
 	echo ' * This file is generated automatically from the default' >>$@
 	echo ' * twm bindings file system.twmrc by the twm Imakefile.' >>$@
 	echo ' */' >>$@
 	echo '' >>$@
 	echo 'char *defTwmrc[] = {' >>$@
-	sed -f deftwmrc.sed <system.twmrc >>$@
+	sed -f ${srcdir}/deftwmrc.sed < ${srcdir}/system.twmrc >>$@
 	echo '    (char *) 0 };' >>$@
 
 EXTRA_DIST = system.twmrc deftwmrc.sed siconify.bm
