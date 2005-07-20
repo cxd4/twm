@@ -37,9 +37,9 @@ AC_CHECK_FUNC([mkstemp],
    AC_DEFINE(HAS_MKSTEMP,1,[Define to 1 if you have the `mkstemp' function.]))
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(DEP, x11 xt xmu)
-AC_SUBST(DEP_CFLAGS)
-AC_SUBST(DEP_LIBS)
+PKG_CHECK_MODULES(TWM, x11 xt xmu)
+AC_SUBST(TWM_CFLAGS)
+AC_SUBST(TWM_LIBS)
 
 AC_OUTPUT([Makefile
 	   src/Makefile
