@@ -2322,6 +2322,7 @@ NeedToDefer(MenuRoot *root)
 
 
 #if defined(sun) && defined(SVR4)
+#include <sys/wait.h>
 
 /**
  * execute the string by /bin/sh
