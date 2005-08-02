@@ -1,0 +1,9 @@
+2005-08-02  Keith Packard  <keithp@keithp.com>
+
+	* src/Makefile.am:
+2005-08-02  Keith Packard  <keithp@keithp.com>
+
+	* Makefile.am:
+	Mark generated files as BUILT_SOURCES and CLEANFILES
+	to ensure they are regenerated after 'make clean' and
+	to make parallel builds work right.

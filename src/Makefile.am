@@ -60,7 +60,10 @@ twm_SOURCES =   \
 	gram.y \
 	lex.l
 
-BUILT_SOURCES = gram.h deftwmrc.c
+BUILT_SOURCES = gram.h gram.c lex.c deftwmrc.c
+CLEANFILES = $(BUILT_SOURCES)
+
+gram.h: gram.c
 
 deftwmrc.c:  system.twmrc
 	rm -f $@
