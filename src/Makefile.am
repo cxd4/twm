@@ -72,8 +72,8 @@ deftwmrc.c:  system.twmrc
 	echo ' * twm bindings file system.twmrc by the twm Imakefile.' >>$@
 	echo ' */' >>$@
 	echo '' >>$@
-	echo 'char *defTwmrc[] = {' >>$@
+	echo 'unsigned char *defTwmrc[] = {' >>$@
 	sed -f ${srcdir}/deftwmrc.sed < ${srcdir}/system.twmrc >>$@
-	echo '    (char *) 0 };' >>$@
+	echo '    (unsigned char *) 0 };' >>$@
 
 EXTRA_DIST = system.twmrc deftwmrc.sed siconify.bm

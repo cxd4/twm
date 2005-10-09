@@ -1,3 +1,12 @@
+2005-10-09  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/Makefile.am (deftwmrc.c): 
+	* src/deftwmrc.c:
+	* src/parse.c: 
+	* src/parse.h: 
+	Bug #3755 <https://bugs.freedesktop.org/show_bug.cgi?id=3755>
+	twm can't handle 8-bit characters in .twmrc (Tomohiro KUBOITA)
+
 2005-08-02  Keith Packard  <keithp@keithp.com>
 
 	* src/Makefile.am:
