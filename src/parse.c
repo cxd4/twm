@@ -1,3 +1,4 @@
+/* $XdotOrg: $ */
 /* $XFree86: xc/programs/twm/parse.c,v 1.15 2002/09/24 21:00:28 tsi Exp $ */
 /*****************************************************************************/
 /*
@@ -81,10 +82,10 @@ in this Software without prior written authorization from The Open Group.
 static FILE *twmrc;
 static int ptr = 0;
 static int len = 0;
-static char buff[BUF_LEN+1];
+static unsigned char buff[BUF_LEN+1];
 static unsigned char overflowbuff[20];		/* really only need one */
 static int overflowlen;
-static char **stringListSource, *currentString;
+static unsigned char **stringListSource, *currentString;
 
 static int doparse ( int (*ifunc)(void), char *srctypename, char *srcname );
 static int twmFileInput ( void );
@@ -224,7 +225,7 @@ int ParseTwmrc (char *filename)
     }
 }
 
-int ParseStringList (char **sl)
+int ParseStringList (unsigned char **sl)
 {
     stringListSource = sl;
     currentString = *sl;
@@ -243,11 +244,11 @@ static int twmFileInput()
 
     while (ptr == len)
     {
-	if (fgets(buff, BUF_LEN, twmrc) == NULL)
+	if (fgets((char *) buff, BUF_LEN, twmrc) == NULL)
 	    return 0;
 
 	ptr = 0;
-	len = strlen(buff);
+	len = strlen((char *) buff);
     }
     return ((int)buff[ptr++]);
 }
