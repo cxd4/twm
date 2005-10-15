@@ -61,7 +61,7 @@ twm_SOURCES =   \
 	lex.l
 
 BUILT_SOURCES = gram.h gram.c lex.c deftwmrc.c
-CLEANFILES = $(BUILT_SOURCES)
+MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 
 gram.h: gram.c
 

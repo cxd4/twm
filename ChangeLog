@@ -1,3 +1,8 @@
+2005-10-15  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/Makefile.am: Have generated files be cleaned by maintainer
+	to pass check-tarball test.
+
 2005-10-09  Alan Coopersmith  <alan.coopersmith@sun.com>
 
 	* src/Makefile.am (deftwmrc.c): 
