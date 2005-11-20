@@ -1,0 +1,8 @@
+.deps
+Makefile
+Makefile.in
+deftwmrc.c
+gram.c
+gram.h
+lex.c
+twm
