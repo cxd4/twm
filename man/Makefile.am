@@ -25,7 +25,7 @@
 # from the copyright holders.
 # 
 
-appmandir = $(mandir)/man$(APP_MAN_SUFFIX)
+appmandir = $(APP_MAN_DIR)
 
 appman_SOURCES = twm.man
 
