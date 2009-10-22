@@ -1,6 +1,4 @@
-.deps
-Makefile
-Makefile.in
+#		Add & Override for this directory and it's subdirectories
 deftwmrc.c
 gram.c
 gram.h
