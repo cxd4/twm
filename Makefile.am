@@ -23,8 +23,6 @@ SUBDIRS = src man
 
 EXTRA_DIST = sample-twmrc/jim.twmrc sample-twmrc/keith.twmrc sample-twmrc/lemke.twmrc
 
-EXTRA_DIST += ChangeLog
-MAINTAINERCLEANFILES = ChangeLog
 
 .PHONY: ChangeLog
 
