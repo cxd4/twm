@@ -24,9 +24,12 @@ SUBDIRS = src man
 EXTRA_DIST = sample-twmrc/jim.twmrc sample-twmrc/keith.twmrc sample-twmrc/lemke.twmrc
 
 
-.PHONY: ChangeLog
+.PHONY: ChangeLog INSTALL
+
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL
