@@ -36,6 +36,8 @@ XORG_DEFAULT_OPTIONS
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_YACC
+AC_PATH_PROG([YACC_INST], $YACC)
+test -z "$YACC_INST" && AC_MSG_ERROR([yacc not found - unable to compile gram.y])
 AC_PROG_LEX
 
 AC_CHECK_FUNC([mkstemp], 
