@@ -53,7 +53,7 @@ Author:  Ralph Mor, X Consortium
 #endif
 #endif
 #endif /* PATH_MAX */
-#ifdef HAS_MKSTEMP
+#ifdef HAVE_MKSTEMP
 #include <unistd.h>
 #endif
 
@@ -74,7 +74,7 @@ Bool sent_save_done = 0;
 
 #define SAVEFILE_VERSION 2
 
-#ifndef HAS_MKSTEMP
+#ifndef HAVE_MKSTEMP
 static char *unique_filename ( char *path, char *prefix );
 #else
 static char *unique_filename ( char *path, char *prefix, int *pFd );
@@ -720,7 +720,7 @@ Bool *height_ever_changed_by_user;
 
 
 
-#ifndef HAS_MKSTEMP
+#ifndef HAVE_MKSTEMP
 static char *
 unique_filename (path, prefix)
 char *path;
@@ -734,7 +734,7 @@ int *pFd;
 #endif
 
 {
-#ifndef HAS_MKSTEMP
+#ifndef HAVE_MKSTEMP
 #ifndef X_NOT_POSIX
     return ((char *) tempnam (path, prefix));
 #else
@@ -789,7 +789,7 @@ SmPointer clientData;
     char discardCommand[80];
     int numVals, i;
     static int first_time = 1;
-#ifdef HAS_MKSTEMP
+#ifdef HAVE_MKSTEMP
     int fd;
 #endif
 
@@ -836,7 +836,7 @@ SmPointer clientData;
 	if (!path)
 	    path = ".";
     }
-#ifndef HAS_MKSTEMP
+#ifndef HAVE_MKSTEMP
     if ((filename = unique_filename (path, ".twm")) == NULL)
 	goto bad;
 

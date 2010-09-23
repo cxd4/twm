@@ -41,8 +41,7 @@ AC_CHECK_FILE([$srcdir/gram.c], [],
               [test -z "$YACC_INST" && AC_MSG_ERROR([yacc not found - unable to compile gram.y])])
 AC_PROG_LEX
 
-AC_CHECK_FUNC([mkstemp], 
-   AC_DEFINE(HAS_MKSTEMP,1,[Define to 1 if you have the `mkstemp' function.]))
+AC_CHECK_FUNCS([mkstemp])
 
 # Checks for pkg-config packages
 PKG_CHECK_MODULES(TWM, x11 xext xt xmu ice sm)
