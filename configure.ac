@@ -33,8 +33,6 @@ m4_ifndef([XORG_MACROS_VERSION],
 XORG_MACROS_VERSION(1.3)
 XORG_DEFAULT_OPTIONS
 
-AC_PROG_CC
-AC_PROG_INSTALL
 AC_PROG_YACC
 AC_PATH_PROG([YACC_INST], $YACC)
 AC_CHECK_FILE([$srcdir/gram.c], [],
@@ -45,9 +43,6 @@ AC_CHECK_FUNCS([mkstemp])
 
 # Checks for pkg-config packages
 PKG_CHECK_MODULES(TWM, x11 xext xt xmu ice sm)
-AC_SUBST(TWM_CFLAGS)
-AC_SUBST(TWM_LIBS)
-
 
 AC_OUTPUT([Makefile
 	   src/Makefile
