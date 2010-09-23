@@ -81,4 +81,4 @@ deftwmrc.c:  system.twmrc
 	sed -f ${srcdir}/deftwmrc.sed < ${srcdir}/system.twmrc >>$@
 	echo '    (unsigned char *) 0 };' >>$@
 
-EXTRA_DIST = system.twmrc deftwmrc.sed siconify.bm
+EXTRA_DIST = deftwmrc.sed siconify.bm
