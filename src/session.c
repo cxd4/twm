@@ -1,5 +1,3 @@
-/* $Xorg: session.c,v 1.5 2001/02/09 02:05:37 xorgcvs Exp $ */
-/* $XdotOrg: app/twm/src/session.c,v 1.3 2005/07/16 22:07:13 alanc Exp $ */
 /******************************************************************************
 
 Copyright 1994, 1998  The Open Group
@@ -26,7 +24,6 @@ in this Software without prior written authorization from The Open Group.
 
 Author:  Ralph Mor, X Consortium
 ******************************************************************************/
-/* $XFree86: xc/programs/twm/session.c,v 3.8 2001/12/14 20:01:10 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
