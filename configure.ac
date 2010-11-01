@@ -36,8 +36,11 @@ XORG_DEFAULT_OPTIONS
 
 AC_PROG_YACC
 AC_PATH_PROG([YACC_INST], $YACC)
-AC_CHECK_FILE([$srcdir/gram.c], [],
-              [test -z "$YACC_INST" && AC_MSG_ERROR([yacc not found - unable to compile gram.y])])
+if test ! -f "$srcdir/gram.c"; then
+   if test -z "$YACC_INST"; then
+      AC_MSG_ERROR([yacc not found - unable to compile gram.y])
+   fi
+fi
 AC_PROG_LEX
 
 AC_CHECK_FUNCS([mkstemp])
