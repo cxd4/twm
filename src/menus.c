@@ -474,6 +474,7 @@ UpdateMenu()
     int i, x, y, x_root, y_root, entry;
     int done;
     MenuItem *badItem = NULL;
+    XPointer context_data;
 
     fromMenu = TRUE;
 
@@ -515,7 +516,8 @@ UpdateMenu()
 	if (ActiveMenu && !ActiveMenu->entered)
 	    continue;
 
-	XFindContext(dpy, ActiveMenu->w, ScreenContext, (caddr_t *)&Scr);
+	if (XFindContext(dpy, ActiveMenu->w, ScreenContext, &context_data) == 0)
+	    Scr = (struct ScreenInfo *) context_data;
 
 	if (x < 0 || y < 0 ||
 	    x >= ActiveMenu->width || y >= ActiveMenu->height)
@@ -2663,21 +2665,22 @@ GetWMState (Window w, int *statep, Window *iwp)
     Atom actual_type;
     int actual_format;
     unsigned long nitems, bytesafter;
-    unsigned long *datap = NULL;
+    unsigned char *prop_return = NULL;
     Bool retval = False;
 
     if (XGetWindowProperty (dpy, w, _XA_WM_STATE, 0L, 2L, False, _XA_WM_STATE,
 			    &actual_type, &actual_format, &nitems, &bytesafter,
-			    (unsigned char **) &datap) != Success || !datap)
+			    &prop_return) != Success || !prop_return)
       return False;
 
     if (nitems <= 2) {			/* "suggested" by ICCCM version 1 */
+	unsigned long *datap = (unsigned long *) prop_return;
 	*statep = (int) datap[0];
 	*iwp = (Window) datap[1];
 	retval = True;
     }
 
-    XFree ((char *) datap);
+    XFree (prop_return);
     return retval;
 }
 
@@ -2847,13 +2850,17 @@ WarpAlongRing (XButtonEvent *ev, Bool forward)
 
     if (r && r != head) {
 	TwmWindow *p = Scr->RingLeader, *t;
+	XPointer context_data;
 
 	Scr->RingLeader = r;
 	WarpToWindow (r);
 
-	if (p && p->mapped &&
-	    XFindContext (dpy, ev->window, TwmContext, (caddr_t *)&t) == XCSUCCESS &&
-	    p == t) {
+	if (XFindContext (dpy, ev->window, TwmContext, &context_data) == 0)
+	    t = (TwmWindow *) context_data;
+	else
+	    t = NULL;
+
+	if (p && p->mapped && p == t) {
 	    p->ring.cursor_valid = True;
 	    p->ring.curs_x = ev->x_root - t->frame_x;
 	    p->ring.curs_y = ev->y_root - t->frame_y;

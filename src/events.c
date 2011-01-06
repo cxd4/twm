@@ -271,14 +271,18 @@ Window WindowOfEvent (XEvent *e)
 Bool DispatchEvent2 ()
 {
     Window w = Event.xany.window;
+    XPointer context_data;
     StashEventTime (&Event);
 
-    if (XFindContext (dpy, w, TwmContext, (caddr_t *) &Tmp_win) == XCNOENT)
-      Tmp_win = NULL;
+    if (XFindContext (dpy, w, TwmContext, &context_data) == 0)
+	Tmp_win = (TwmWindow *) context_data;
+    else
+	Tmp_win = NULL;
 
-    if (XFindContext (dpy, w, ScreenContext, (caddr_t *)&Scr) == XCNOENT) {
+    if (XFindContext (dpy, w, ScreenContext, &context_data) == 0)
+	Scr = (struct ScreenInfo *) context_data;
+    else
 	Scr = FindScreenInfo (WindowOfEvent (&Event));
-    }
 
     if (!Scr) return False;
 
@@ -298,14 +302,18 @@ Bool DispatchEvent2 ()
 Bool DispatchEvent ()
 {
     Window w = Event.xany.window;
+    XPointer context_data;
     StashEventTime (&Event);
 
-    if (XFindContext (dpy, w, TwmContext, (caddr_t *) &Tmp_win) == XCNOENT)
-      Tmp_win = NULL;
+    if (XFindContext (dpy, w, TwmContext, &context_data) == 0)
+	Tmp_win = (TwmWindow *) context_data;
+    else
+	Tmp_win = NULL;
 
-    if (XFindContext (dpy, w, ScreenContext, (caddr_t *)&Scr) == XCNOENT) {
+    if (XFindContext (dpy, w, ScreenContext, &context_data) == 0)
+	Scr = (struct ScreenInfo *) context_data;
+    else
 	Scr = FindScreenInfo (WindowOfEvent (&Event));
-    }
 
     if (!Scr) return False;
 
@@ -362,18 +370,25 @@ HandleColormapNotify()
     ColormapWindow *cwin, **cwins;
     TwmColormap *cmap;
     int lost, won, n, number_cwins;
+    XPointer context_data;
 
-    if (XFindContext(dpy, cevent->window, ColormapContext, (caddr_t *)&cwin) == XCNOENT)
+    if (XFindContext(dpy, cevent->window, ColormapContext, &context_data) == 0)
+	cwin = (ColormapWindow *) context_data;
+    else
 	return;
+
     cmap = cwin->colormap;
 
     if (cevent->new)
     {
 	if (XFindContext(dpy, cevent->colormap, ColormapContext,
-			 (caddr_t *)&cwin->colormap) == XCNOENT)
+			 &context_data) == XCNOENT)
 	    cwin->colormap = CreateTwmColormap(cevent->colormap);
 	else
+	{
+	    cwin->colormap = (TwmColormap *) context_data;
 	    cwin->colormap->refcnt++;
+	}
 
 	cmap->refcnt--;
 
@@ -514,8 +529,11 @@ HandleVisibilityNotify()
     XVisibilityEvent *vevent = (XVisibilityEvent *) &Event;
     ColormapWindow *cwin;
     TwmColormap *cmap;
+    XPointer context_data;
 
-    if (XFindContext(dpy, vevent->window, ColormapContext, (caddr_t *)&cwin) == XCNOENT)
+    if (XFindContext(dpy, vevent->window, ColormapContext, &context_data) == 0)
+	cwin = (ColormapWindow *) context_data;
+    else
 	return;
     
     /*
@@ -1019,9 +1037,11 @@ HandleClientMessage()
 void
 HandleExpose()
 {
-    MenuRoot *tmp;
-    if (XFindContext(dpy, Event.xany.window, MenuContext, (caddr_t *)&tmp) == 0)
+    XPointer context_data;
+
+    if (XFindContext(dpy, Event.xany.window, MenuContext, &context_data) == 0)
     {
+	MenuRoot *tmp = (MenuRoot *) context_data;
 	PaintMenu(tmp, &Event);
 	return;
     }
@@ -1260,12 +1280,13 @@ HandleCreateNotify()
 void
 HandleMapRequest()
 {
-    int stat;
+    XPointer context_data;
     int zoom_save;
 
     Event.xany.window = Event.xmaprequest.window;
-    stat = XFindContext(dpy, Event.xany.window, TwmContext, (caddr_t *)&Tmp_win);
-    if (stat == XCNOENT)
+    if (XFindContext(dpy, Event.xany.window, TwmContext, &context_data) == 0)
+	Tmp_win = (TwmWindow *) context_data;
+    else
 	Tmp_win = NULL;
 
     /* If the window has never been mapped before ... */
@@ -1379,6 +1400,7 @@ HandleUnmapNotify()
 {
     int dstx, dsty;
     Window dumwin;
+    XPointer context_data;
 
     /*
      * The July 27, 1988 ICCCM spec states that a client wishing to switch
@@ -1392,7 +1414,9 @@ HandleUnmapNotify()
     {
 	Event.xany.window = Event.xunmap.window;
 	if (XFindContext(dpy, Event.xany.window,
-	    TwmContext, (caddr_t *)&Tmp_win) == XCNOENT)
+			 TwmContext, &context_data) == 0)
+	    Tmp_win = (TwmWindow *) context_data;
+	else
 	    Tmp_win = NULL;
     }
 
@@ -1442,6 +1466,8 @@ HandleUnmapNotify()
 void
 HandleMotionNotify()
 {
+    XPointer context_data;
+
     if (ResizeWindow != (Window) 0)
     {
 	XQueryPointer( dpy, Event.xany.window,
@@ -1456,7 +1482,8 @@ HandleMotionNotify()
 	    || abs (Event.xmotion.y - ResizeOrigY) >= Scr->MoveDelta)
 	  WindowMoved = TRUE;
 
-	XFindContext(dpy, ResizeWindow, TwmContext, (caddr_t *)&Tmp_win);
+	if (XFindContext(dpy, ResizeWindow, TwmContext, &context_data) == 0)
+	    Tmp_win = (TwmWindow *) context_data;
 	DoResize(Event.xmotion.x_root, Event.xmotion.y_root, Tmp_win);
     }
 }
@@ -1471,6 +1498,7 @@ HandleButtonRelease()
 {
     int xl, xr, yt, yb, w, h;
     unsigned mask;
+    XPointer context_data;
 
     if (InfoLines) 		/* delete info box on 2nd button release  */
       if (Context == C_IDENTIFY) {
@@ -1483,7 +1511,8 @@ HandleButtonRelease()
     {
 	MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
 
-	XFindContext(dpy, DragWindow, TwmContext, (caddr_t *)&Tmp_win);
+	if (XFindContext(dpy, DragWindow, TwmContext, &context_data) == 0)
+	    Tmp_win = (TwmWindow *) context_data;
 	if (DragWindow == Tmp_win->frame)
 	{
 	    xl = Event.xbutton.x_root - DragX - Tmp_win->frame_bw;
@@ -1833,6 +1862,8 @@ HandleButtonPress()
 	     * it was the root.  We must check to see if it happened to be
 	     * inside of a client that was getting button press events.
 	     */
+	    XPointer context_data;
+
 	    XTranslateCoordinates(dpy, Scr->Root, Scr->Root,
 		Event.xbutton.x, 
 		Event.xbutton.y, 
@@ -1840,12 +1871,14 @@ HandleButtonPress()
 
 	    if (Event.xany.window == 0 ||
 		(XFindContext(dpy, Event.xany.window, TwmContext,
-			      (caddr_t *)&Tmp_win) == XCNOENT))
+			      &context_data) == XCNOENT))
 	    {
 		RootFunction = 0;
 		Bell(XkbBI_MinorError,0,Event.xany.window);
 		return;
 	    }
+	    else
+		Tmp_win = (TwmWindow *) context_data;
 
 	    XTranslateCoordinates(dpy, Scr->Root, Event.xany.window,
 		Event.xbutton.x, 
@@ -1956,6 +1989,7 @@ HandleEnterNotify()
     XEnterWindowEvent *ewp = &Event.xcrossing;
     HENScanArgs scanArgs;
     XEvent dummy;
+    XPointer context_data;
     
     /*
      * Save the id of the window entered.  This will be used to remove
@@ -2081,7 +2115,10 @@ HandleEnterNotify()
     /*
      * Find the menu that we are dealing with now; punt if unknown
      */
-    if (XFindContext (dpy, ewp->window, MenuContext, (caddr_t *)&mr) != XCSUCCESS) return;
+    if (XFindContext (dpy, ewp->window, MenuContext, &context_data) == 0)
+	mr = (MenuRoot *) context_data;
+    else
+	return;
 
     mr->entered = TRUE;
     if (ActiveMenu && mr == ActiveMenu->prev && RootFunction == 0) {
@@ -2216,6 +2253,7 @@ HandleConfigureRequest()
     int x, y, width, height, bw;
     int gravx, gravy;
     XConfigureRequestEvent *cre = &Event.xconfigurerequest;
+    XPointer context_data;
 
 #ifdef DEBUG_EVENTS
     fprintf(stderr, "ConfigureRequest\n");
@@ -2238,9 +2276,10 @@ HandleConfigureRequest()
      * be wrong
      */
     Event.xany.window = cre->window;	/* mash parent field */
-    if (XFindContext (dpy, cre->window, TwmContext, (caddr_t *) &Tmp_win) ==
-	XCNOENT)
-      Tmp_win = NULL;
+    if (XFindContext (dpy, cre->window, TwmContext, &context_data) == 0)
+	Tmp_win = (TwmWindow *) context_data;
+    else
+	Tmp_win = NULL;
 
 
     /*
@@ -2262,12 +2301,14 @@ HandleConfigureRequest()
     }
 
     if ((cre->value_mask & CWStackMode) && Tmp_win->stackmode) {
-	TwmWindow *otherwin;
+	TwmWindow *otherwin = NULL;
 
-	xwc.sibling = (((cre->value_mask & CWSibling) &&
-			(XFindContext (dpy, cre->above, TwmContext,
-				       (caddr_t *) &otherwin) == XCSUCCESS))
-		       ? otherwin->frame : cre->above);
+	if (cre->value_mask & CWSibling) {
+	    if (XFindContext (dpy, cre->above, TwmContext, &context_data) == 0)
+		otherwin = (TwmWindow *) context_data;
+	}
+
+	xwc.sibling = (otherwin != NULL) ? otherwin->frame : cre->above;
 	xwc.stack_mode = cre->detail;
 	XConfigureWindow (dpy, Tmp_win->frame, 
 			  cre->value_mask & (CWSibling | CWStackMode), &xwc);

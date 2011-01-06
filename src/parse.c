@@ -949,16 +949,19 @@ put_pixel_on_root(Pixel pixel)
   Atom          pixelAtom, retAtom;	                 
   int           retFormat;
   unsigned long nPixels, retAfter;                     
-  Pixel        *retProp;
+  unsigned char*retProp;
+  Pixel        *pixelProp;
   pixelAtom = XInternAtom(dpy, "_MIT_PRIORITY_COLORS", True);        
   XGetWindowProperty(dpy, Scr->Root, pixelAtom, 0, 8192, 
 		     False, XA_CARDINAL, &retAtom,       
 		     &retFormat, &nPixels, &retAfter,    
-		     (unsigned char **)&retProp);
+		     &retProp);
 
+  pixelProp = (Pixel *) retProp;
   for (i=0; i< nPixels; i++)                             
-      if (pixel == retProp[i]) addPixel = 0;             
-                                                         
+      if (pixel == pixelProp[i])
+	  addPixel = 0;
+
   if (addPixel)                                          
       XChangeProperty (dpy, Scr->Root, _XA_MIT_PRIORITY_COLORS,
 		       XA_CARDINAL, 32, PropModeAppend,  
