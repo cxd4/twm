@@ -65,10 +65,8 @@ twm_SOURCES =   \
 	gram.y \
 	lex.l
 
-BUILT_SOURCES = gram.h gram.c lex.c deftwmrc.c
-MAINTAINERCLEANFILES = $(BUILT_SOURCES)
-
-gram.h: gram.c
+BUILT_SOURCES = gram.h deftwmrc.c
+MAINTAINERCLEANFILES = deftwmrc.c
 
 deftwmrc.c:  system.twmrc
 	$(AM_V_GEN)rm -f $@ ; \
