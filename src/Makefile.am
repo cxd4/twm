@@ -66,7 +66,6 @@ twm_SOURCES =   \
 	lex.l
 
 BUILT_SOURCES = gram.h deftwmrc.c
-MAINTAINERCLEANFILES = deftwmrc.c
 
 deftwmrc.c:  system.twmrc
 	$(AM_V_GEN)rm -f $@ ; \
