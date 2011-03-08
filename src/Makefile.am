@@ -68,7 +68,7 @@ twm_SOURCES =   \
 BUILT_SOURCES = gram.h deftwmrc.c
 
 deftwmrc.c:  system.twmrc
-	$(AM_V_GEN)rm -f $@ ; \
+	$(AM_V_at)rm -f $@ ; \
 	echo '/* ' >>$@ ; \
 	echo ' * This file is generated automatically from the default' >>$@ ; \
 	echo ' * twm bindings file system.twmrc by the twm Makefile.' >>$@ ; \
