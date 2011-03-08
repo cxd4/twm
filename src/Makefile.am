@@ -75,7 +75,7 @@ deftwmrc.c:  system.twmrc
 	echo ' */' >>$@ ; \
 	echo '' >>$@ ; \
 	echo 'unsigned char *defTwmrc[] = {' >>$@ ; \
-	sed -f ${srcdir}/deftwmrc.sed < ${srcdir}/system.twmrc >>$@ ; \
+	$(SED) -f ${srcdir}/deftwmrc.sed < ${srcdir}/system.twmrc >>$@ ; \
 	echo '    (unsigned char *) 0 };' >>$@
 
 EXTRA_DIST = deftwmrc.sed siconify.bm
