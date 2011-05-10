@@ -58,6 +58,10 @@ in this Software without prior written authorization from The Open Group.
  *
  ***********************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <X11/Xos.h>
 #include "twm.h"

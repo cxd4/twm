@@ -26,6 +26,7 @@ AC_INIT([twm], [1.0.6],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], [twm])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
+AC_USE_SYSTEM_EXTENSIONS
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
