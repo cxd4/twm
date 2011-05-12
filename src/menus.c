@@ -920,7 +920,7 @@ MakeMenu(MenuRoot *mr)
 	b3.flags = DoRed | DoGreen | DoBlue;
 
 	num -= 1;
-	for (i = 0, cur = start->next; i < num; i++, cur = cur->next)
+	for (i = 0, cur = start->next; i < num && cur; i++, cur = cur->next)
 	{
 	    f3.red += fred;
 	    f3.green += fgreen;
