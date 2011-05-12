@@ -353,7 +353,7 @@ extern void InitVariables ( void );
 extern void CreateFonts ( void );
 extern void RestoreWithdrawnLocation ( TwmWindow *tmp );
 extern void Reborder( Time time);
-extern void Done( XtPointer, XtSignalId * );
+extern void Done( XtPointer, XtSignalId * ) _X_NORETURN;
 extern void ComputeCommonTitleOffsets ( void );
 extern void ComputeTitleLocation ( TwmWindow *tmp );
 extern void ComputeWindowTitleOffsets ( TwmWindow *tmp_win, int width, Bool squeeze );

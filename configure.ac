@@ -50,7 +50,7 @@ AC_PROG_LEX
 AC_CHECK_FUNCS([mkstemp])
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(TWM, x11 xext xt xmu ice sm)
+PKG_CHECK_MODULES(TWM, x11 xext xt xmu ice sm xproto >= 7.0.17)
 
 AC_OUTPUT([Makefile
 	   src/Makefile
