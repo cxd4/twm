@@ -569,7 +569,7 @@ UpdateMenu()
 	if (!done)
 	{
 	    ActiveItem = mi;
-	    if (ActiveItem->func != F_TITLE && !ActiveItem->state)
+	    if (ActiveItem && ActiveItem->func != F_TITLE && !ActiveItem->state)
 	    {
 		ActiveItem->state = 1;
 		PaintEntry(ActiveMenu, ActiveItem, False);
@@ -577,7 +577,7 @@ UpdateMenu()
 	}
 
 	/* now check to see if we were over the arrow of a pull right entry */
-	if (ActiveItem->func == F_MENU && 
+	if (ActiveItem && ActiveItem->func == F_MENU && 
 	    ((ActiveMenu->width - x) < (ActiveMenu->width >> 1)))
 	{
 	    MenuRoot *save = ActiveMenu;
