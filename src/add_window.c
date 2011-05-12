@@ -166,7 +166,7 @@ AddWindow(Window w, int iconm, IconMgr *iconp)
     char *name;
 
 #ifdef DEBUG
-    fprintf(stderr, "AddWindow: w = 0x%x\n", w);
+    fprintf(stderr, "AddWindow: w = 0x%lx\n", (unsigned long)w);
 #endif
 
     /* allocate space for the twm window */
