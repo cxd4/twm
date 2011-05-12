@@ -511,13 +511,16 @@ UpdateMenu()
 
 	if (Event.type != MotionNotify)
 	    continue;
+ 
+	if (!ActiveMenu)
+            continue;
 
 	done = FALSE;
 	XQueryPointer( dpy, ActiveMenu->w, &JunkRoot, &JunkChild,
 	    &x_root, &y_root, &x, &y, &JunkMask);
 
 	/* if we haven't recieved the enter notify yet, wait */
-	if (ActiveMenu && !ActiveMenu->entered)
+	if (!ActiveMenu->entered)
 	    continue;
 
 	if (XFindContext(dpy, ActiveMenu->w, ScreenContext, &context_data) == 0)
