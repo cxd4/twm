@@ -551,7 +551,7 @@ char *filename;
     FILE *configFile;
     TWMWinConfigEntry *entry;
     int done = 0;
-    unsigned short version;
+    unsigned short version = 0;
 
     configFile = fopen (filename, "rb");
     if (!configFile)
