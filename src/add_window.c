@@ -1535,10 +1535,12 @@ FetchWmColormapWindows (TwmWindow *tmp)
 
 	cwins = (ColormapWindow **) malloc(sizeof(ColormapWindow *));
 	if (XFindContext(dpy, tmp->w, ColormapContext, (caddr_t *)&cwins[0]) ==
-		XCNOENT)
+	    XCNOENT) {
 	    cwins[0] = CreateColormapWindow(tmp->w,
 			    (Bool) tmp->cmaps.number_cwins == 0, False);
-	else
+	    if (cwins[0] == NULL)
+		number_cmap_windows = 0;
+	} else
 	    cwins[0]->refcnt++;
     }
 
