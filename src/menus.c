@@ -2387,7 +2387,7 @@ Execute(char *s)
     (void) system (s);
 
     if (restorevar) {		/* why bother? */
-	(void) sprintf (buf, "DISPLAY=%s", oldDisplay);
+	(void) snprintf (buf, sizeof(buf), "DISPLAY=%s", oldDisplay);
 	putenv (buf);
     }
 }
@@ -2592,7 +2592,7 @@ Identify (TwmWindow *t)
     unsigned udummy;
 
     n = 0;
-    (void) sprintf(Info[n++], "Twm version:  %s", Version);
+    snprintf(Info[n++], INFO_SIZE, "Twm version:  %s", Version);
     Info[n++][0] = '\0';
 
     if (t) {
@@ -2600,24 +2600,27 @@ Identify (TwmWindow *t)
 		      &wwidth, &wheight, &bw, &depth);
 	(void) XTranslateCoordinates (dpy, t->w, Scr->Root, 0, 0,
 				      &x, &y, &junk);
-	(void) sprintf(Info[n++], "Name             = \"%s\"", t->full_name);
-	(void) sprintf(Info[n++], "Class.res_name   = \"%s\"", t->class.res_name);
-	(void) sprintf(Info[n++], "Class.res_class  = \"%s\"", t->class.res_class);
+	snprintf(Info[n++], INFO_SIZE,
+		 "Name             = \"%s\"", t->full_name);
+	snprintf(Info[n++], INFO_SIZE,
+		 "Class.res_name   = \"%s\"", t->class.res_name);
+	snprintf(Info[n++], INFO_SIZE,
+		 "Class.res_class  = \"%s\"", t->class.res_class);
 	Info[n++][0] = '\0';
-	(void) sprintf(Info[n++], "Geometry/root    = %dx%d+%d+%d", wwidth, wheight,
-		x, y);
-	(void) sprintf(Info[n++], "Border width     = %d", bw);
-	(void) sprintf(Info[n++], "Depth            = %d", depth);
+	snprintf(Info[n++], INFO_SIZE,
+		 "Geometry/root    = %dx%d+%d+%d", wwidth, wheight, x, y);
+	snprintf(Info[n++], INFO_SIZE, "Border width     = %d", bw);
+	snprintf(Info[n++], INFO_SIZE, "Depth            = %d", depth);
 	if (HasSync)
 	{
 	    int priority;
 	    (void)XSyncGetPriority(dpy, t->w, &priority);
-	    (void) sprintf(Info[n++], "Priority         = %d", priority);
+	    snprintf(Info[n++], INFO_SIZE, "Priority         = %d", priority);
 	}
     }
 
     Info[n++][0] = '\0';
-    (void) sprintf(Info[n++], "Click to dismiss....");
+    snprintf(Info[n++], INFO_SIZE, "Click to dismiss....");
 
     /* figure out the width and height of the info window */
     height = n * (Scr->DefaultFont.height+2);
