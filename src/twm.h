@@ -193,7 +193,7 @@ typedef struct _SqueezeInfo {
  * ICCCM property.
  */
 typedef struct TwmColormap
-{	
+{
     Colormap c;			/* Colormap id */
     int state;			/* install(ability) state */
     unsigned long install_req;	/* request number which installed it */
@@ -224,7 +224,7 @@ typedef struct Colormaps
 				       ((cm)->number_cwins - 1) / 2)
 
 /* for each window that is on the display, one of these structures
- * is allocated and linked into a list 
+ * is allocated and linked into a list
  */
 typedef struct TwmWindow
 {
@@ -410,7 +410,7 @@ extern Bool GetWMState ( Window w, int *statep, Window *iwp );
 extern void twmrc_error_prefix ( void );
 
 extern int yyparse ( void );
-extern int yylex ( void ); 
+extern int yylex ( void );
 extern void yyerror ( char *s );
 extern int doinput ( char *buf, int size );
 extern void RemoveDQuote ( char *str );
