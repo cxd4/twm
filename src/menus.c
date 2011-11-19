@@ -2341,7 +2341,7 @@ System (char *s)
     int pid, status;
     if ((pid = fork ()) == 0) {
 	(void) setpgrp();
-	execl ("/bin/sh", "sh", "-c", s, 0);
+	execl ("/bin/sh", "sh", "-c", s, NULL);
     } else
 	waitpid (pid, &status, 0);
     return status;
