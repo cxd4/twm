@@ -24,7 +24,7 @@
 .\" other dealings in this Software without prior written authorization
 .\" from The Open Group.
 .\"
-.de EX		\"Begin example
+.de EX          \"Begin example
 .ne 5
 .if n .sp 1
 .if t .sp .5
@@ -37,7 +37,6 @@
 .if n .sp 1
 .if t .sp .5
 ..
-.ta .3i .6i .9i 1.2i 1.5i 1.8i
 .TH TWM 1 __xorgversion__
 .SH NAME
 twm \- Tab Window Manager for the X Window System
@@ -178,9 +177,9 @@ or
 .EX 0
 \fBAutoRaise\fP
 {
-	"emacs"
-	"XTerm"
-	"Xmh"
+        "emacs"
+        "XTerm"
+        "Xmh"
 }
 .EE
 When a variable containing a list of strings representing windows is searched 
@@ -239,8 +238,8 @@ different types of windows.  For example:
 .EX 0
 \fBBorderColor\fP "gray50"
 {
-	"XTerm"	"red"
-	"xmh"	"green"
+        "XTerm" "red"
+        "xmh"   "green"
 }
 .EE
 The default is "black".
@@ -303,11 +302,11 @@ For example:
 .EX 0
 \fBColor\fP
 {
-	MenuBackground		"gray50"
-	MenuForeground		"blue"
-	BorderColor			"red" { "XTerm" "yellow" }
-	TitleForeground		"yellow"
-	TitleBackground		"blue"
+        MenuBackground          "gray50"
+        MenuForeground          "blue"
+        BorderColor                     "red" { "XTerm" "yellow" }
+        TitleForeground         "yellow"
+        TitleBackground         "blue"
 }
 .EE
 All of these color variables may also be specified for the \fBMonochrome\fP 
@@ -326,7 +325,7 @@ pointer cursors.  Each cursor
 may be defined either from the \fBcursor\fP font or from two bitmap files.
 Shapes from the \fBcursor\fP font may be specified directly as:
 .EX 0
-	\fIcursorname\fP	"\fIstring\fP"
+        \fIcursorname\fP        "\fIstring\fP"
 .EE
 where \fIcursorname\fP is one of the cursor names listed below, and
 \fIstring\fP is the name of a glyph as found in the file
@@ -335,7 +334,7 @@ where \fIcursorname\fP is one of the cursor names listed below, and
 If the cursor is to be defined
 from bitmap files, the following syntax is used instead:
 .EX 0
-	\fIcursorname\fP	"\fIimage\fP"	"\fImask\fP"
+        \fIcursorname\fP        "\fIimage\fP"   "\fImask\fP"
 .EE
 The \fIimage\fP and \fImask\fP strings specify the names of files containing
 the glyph image and mask in \fIbitmap(__appmansuffix__)\fP form.
@@ -344,17 +343,17 @@ The following example shows the default cursor definitions:
 .EX 0
 \fBCursors\fP
 {
-	Frame		"top_left_arrow"
-	Title		"top_left_arrow"
-	Icon		"top_left_arrow"
-	IconMgr	"top_left_arrow"
-	Move		"fleur"
-	Resize		"fleur"
-	Menu		"sb_left_arrow"
-	Button		"hand2"
-	Wait		"watch"
-	Select		"dot"
-	Destroy	"pirate"
+        Frame           "top_left_arrow"
+        Title           "top_left_arrow"
+        Icon            "top_left_arrow"
+        IconMgr "top_left_arrow"
+        Move            "fleur"
+        Resize          "fleur"
+        Menu            "sb_left_arrow"
+        Button          "hand2"
+        Wait            "watch"
+        Select          "dot"
+        Destroy "pirate"
 }
 .EE
 .IP "\fBDecorateTransients\fP" 8
@@ -475,7 +474,7 @@ The default is "black".
 This variable specifies a list of icon managers to create.  Each item in the
 \fIiconmgr-list\fP has the following format:
 .EX 0
-	"\fIwinname\fP" ["\fIiconname\fP"]	"\fIgeometry\fP" \fIcolumns\fP
+        "\fIwinname\fP" ["\fIiconname\fP"]      "\fIgeometry\fP" \fIcolumns\fP
 .EE
 where \fIwinname\fP is the name of the windows that should be put into this
 icon manager, \fIiconname\fP is the name of that icon manager window's icon, 
@@ -485,8 +484,8 @@ the number of columns in this icon manager as described in
 .EX 0
 \fBIconManagers\fP
 {
-	"XTerm"	"=300x5+800+5"	5
-	"myhost"	"=400x5+100+5"	2
+        "XTerm" "=300x5+800+5"  5
+        "myhost"        "=400x5+100+5"  2
 }
 .EE
 Clients whose name or class is ``XTerm'' will have an entry created
@@ -516,8 +515,8 @@ should be used as their icons.  For example:
 .EX 0
 \fBIcons\fP
 {
-	"XTerm"	"xterm.icon"
-	"xfd"		"xfd_icon"
+        "XTerm" "xterm.icon"
+        "xfd"           "xfd_icon"
 }
 .EE
 Windows that match ``XTerm'' and would not be iconified by unmapping, and 
@@ -531,12 +530,12 @@ entry specified colors.  In the example below:
 .EX 0
 \fBMenu\fP "mymenu"
 {
-	"Title"		("black":"red")		f.title
-	"entry1"				f.nop
-	"entry2"				f.nop
-	"entry3"	("white":"green")	f.nop
-	"entry4"				f.nop
-	"entry5"	("red":"white")		f.nop
+        "Title"         ("black":"red")         f.title
+        "entry1"                                f.nop
+        "entry2"                                f.nop
+        "entry3"        ("white":"green")       f.nop
+        "entry4"                                f.nop
+        "entry5"        ("red":"white")         f.nop
 }
 .EE
 the foreground colors for ``entry1'' and ``entry2'' will be interpolated
@@ -678,7 +677,7 @@ may be specified:
 .EX 0
 \fBPixmaps\fP
 {
-	TitleHighlight	"gray1"
+        TitleHighlight  "gray1"
 }
 .EE
 The default for \fITitleHighlight\fP is to use an even stipple pattern.
@@ -737,7 +736,7 @@ The optional \fIsqueeze-list\fP
 may be used to control the location of the squeezed titlebar along the
 top of the window.  It contains entries of the form:
 .EX 0
-	"\fIname\fP"		\fIjustification\fP	\fInum\fP	\fIdenom\fP
+        "\fIname\fP"            \fIjustification\fP     \fInum\fP       \fIdenom\fP
 .EE
 where \fIname\fP is a window name, \fIjustification\fP is either \fBleft\fP,
 \fBcenter\fP, or \fBright\fP, and \fInum\fP and \fIdenom\fP
@@ -750,11 +749,11 @@ for \fBright\fP.  For example:
 .EX 0
 \fBSqueezeTitle\fP
 {
-	"XTerm"	left		0	0
-	"xterm1"	left		1	3
-	"xterm2"	left		2	3
-	"oclock"	center		0	0
-	"emacs"	right		0	0
+        "XTerm" left            0       0
+        "xterm1"        left            1       3
+        "xterm2"        left            2       3
+        "oclock"        center          0       0
+        "emacs" right           0       0
 }
 .EE
 The \fBDontSqueezeTitle\fP list can be used to turn off squeezing on 
@@ -859,11 +858,11 @@ Titlebuttons specifications must include the name of the pixmap to use in
 the button box and the function to be invoked when a pointer button is 
 pressed within them:
 .EX 0
-\fBLeftTitleButton\fP "\fIbitmapname\fP"	= \fIfunction\fP
+\fBLeftTitleButton\fP "\fIbitmapname\fP"        = \fIfunction\fP
 .EE
 or
 .EX 0
-\fBRightTitleButton\fP "\fIbitmapname\fP"	= \fIfunction\fP
+\fBRightTitleButton\fP "\fIbitmapname\fP"       = \fIfunction\fP
 .EE
 The \fIbitmapname\fP may refer to one of the  built-in bitmaps
 (which are scaled to match \fBTitleFont\fP) by using the appropriate
@@ -875,8 +874,8 @@ function is to be invoked.  Keys are given as strings containing the
 appropriate
 keysym name; buttons are given as the keywords \fBButton1\fP-\fBButton5\fP:
 .EX 0
-"FP1"		= \fImodlist\fP : \fIcontext\fP : \fIfunction\fP
-\fBButton1\fP	= \fImodlist\fP : \fIcontext\fP : \fIfunction\fP
+"FP1"           = \fImodlist\fP : \fIcontext\fP : \fIfunction\fP
+\fBButton1\fP   = \fImodlist\fP : \fIcontext\fP : \fIfunction\fP
 .EE
 The \fImodlist\fP is any combination of the modifier names \fBshift\fP,
 \fBcontrol\fP, \fBlock\fP, \fBmeta\fP, \fBmod1\fP, \fBmod2\fP, \fBmod3\fP,
@@ -895,32 +894,32 @@ separated by a vertical bar.  The \fIfunction\fP is any of the \fBf.\fP
 keywords described below.  For example, the default startup
 file contains the following bindings:
 .EX 0
-Button1	=	: root		: f.menu "TwmWindows"
-Button1	= m	: window | icon	: f.function "move-or-lower"
-Button2	= m	: window | icon	: f.iconify
-Button3	= m	: window | icon	: f.function "move-or-raise"
-Button1	=	: title		: f.function "move-or-raise"
-Button2	=	: title		: f.raiselower
-Button1	=	: icon		: f.function "move-or-iconify"
-Button2	=	: icon		: f.iconify
-Button1	=	: iconmgr	: f.iconify
-Button2	=	: iconmgr	: f.iconify
+Button1 =       : root          : f.menu "TwmWindows"
+Button1 = m     : window | icon : f.function "move-or-lower"
+Button2 = m     : window | icon : f.iconify
+Button3 = m     : window | icon : f.function "move-or-raise"
+Button1 =       : title         : f.function "move-or-raise"
+Button2 =       : title         : f.raiselower
+Button1 =       : icon          : f.function "move-or-iconify"
+Button2 =       : icon          : f.iconify
+Button1 =       : iconmgr       : f.iconify
+Button2 =       : iconmgr       : f.iconify
 .EE
 A user who wanted to be able to manipulate windows from the keyboard could
 use the following bindings:
 .EX 0
-"F1"	=	: all		: f.iconify
-"F2"	=	: all		: f.raiselower
-"F3"	=	: all		: f.warpring "next"
-"F4"	=	: all		: f.warpto "xmh"
-"F5"	=	: all		: f.warpto "emacs"
-"F6"	=	: all		: f.colormap "next"
-"F7"	=	: all		: f.colormap "default"
-"F20"	=	: all		: f.warptoscreen "next"
-"Left"	= m	: all		: f.backiconmgr
-"Right"	= m | s	: all		: f.forwiconmgr
-"Up"	= m	: all		: f.upiconmgr
-"Down"	= m | s	: all		: f.downiconmgr
+"F1"    =       : all           : f.iconify
+"F2"    =       : all           : f.raiselower
+"F3"    =       : all           : f.warpring "next"
+"F4"    =       : all           : f.warpto "xmh"
+"F5"    =       : all           : f.warpto "emacs"
+"F6"    =       : all           : f.colormap "next"
+"F7"    =       : all           : f.colormap "default"
+"F20"   =       : all           : f.warptoscreen "next"
+"Left"  = m     : all           : f.backiconmgr
+"Right" = m | s : all           : f.forwiconmgr
+"Up"    = m     : all           : f.upiconmgr
+"Down"  = m | s : all           : f.downiconmgr
 .EE
 \fITwm\fP provides many more window manipulation primitives than can be
 conveniently stored in a titlebar, menu, or set of key bindings.  Although
@@ -935,10 +934,10 @@ User-defined functions contain the name by which they are referenced in
 calls to \fBf.function\fP and a list of other functions to execute.  For
 example:
 .EX 0
-Function "move-or-lower"	{ f.move f.deltastop f.lower }
-Function "move-or-raise"	{ f.move f.deltastop f.raise }
-Function "move-or-iconify"	{ f.move f.deltastop f.iconify }
-Function "restore-colormap"	{ f.colormap "default" f.lower }
+Function "move-or-lower"        { f.move f.deltastop f.lower }
+Function "move-or-raise"        { f.move f.deltastop f.raise }
+Function "move-or-iconify"      { f.move f.deltastop f.iconify }
+Function "restore-colormap"     { f.colormap "default" f.lower }
 .EE
 The function name must be used in \fBf.function\fP exactly as it appears in 
 the function specification.
@@ -1195,12 +1194,12 @@ individual items:
 .EX 0
 \fBMenu\fP "\fImenuname\fP" [ ("\fIdeffore\fP":"\fIdefback\fP") ]
 {
-	\fIstring1\fP	[ ("\fIfore1\fP":"\fIbackn\fP")]	\fIfunction1\fP
-	\fIstring2\fP	[ ("\fIfore2\fP":"\fIbackn\fP")]	\fIfunction2\fP
-		.
-		.
-		.
-	\fIstringN\fP	[ ("\fIforeN\fP":"\fIbackN\fP")]	\fIfunctionN\fP
+        \fIstring1\fP   [ ("\fIfore1\fP":"\fIbackn\fP")]        \fIfunction1\fP
+        \fIstring2\fP   [ ("\fIfore2\fP":"\fIbackn\fP")]        \fIfunction2\fP
+                .
+                .
+                .
+        \fIstringN\fP   [ ("\fIforeN\fP":"\fIbackN\fP")]        \fIfunctionN\fP
 }
 .EE
 .PP
