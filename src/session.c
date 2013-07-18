@@ -721,7 +721,7 @@ Bool *height_ever_changed_by_user;
 static char *
 unique_filename (
     const char *path,
-    const char *prefix
+    const char *prefix)
 #else
 static char *
 unique_filename (
