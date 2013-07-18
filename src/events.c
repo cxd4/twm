@@ -76,7 +76,7 @@ in this Software without prior written authorization from The Open Group.
 
 #define MAX_X_EVENT 256
 event_proc EventHandler[MAX_X_EVENT]; /* event handler jump table */
-char *Action;
+const char *Action;
 int Context = C_NO_CONTEXT;	/* current button press context */
 TwmWindow *ButtonWindow;	/* button press window structure */
 XEvent ButtonEvent;		/* button press event */

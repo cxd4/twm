@@ -127,7 +127,7 @@ XClassHint NoClass;		/* for applications with no class */
 
 XGCValues Gcv;
 
-char *Home;			/* the HOME environment variable */
+const char *Home;		/* the HOME environment variable */
 int HomeLen;			/* length of Home */
 int ParseError;			/* error parsing the .twmrc file */
 

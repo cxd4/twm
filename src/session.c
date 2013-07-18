@@ -72,9 +72,9 @@ Bool sent_save_done = 0;
 #define SAVEFILE_VERSION 2
 
 #ifndef HAVE_MKSTEMP
-static char *unique_filename ( char *path, char *prefix );
+static char *unique_filename ( const char *path, const char *prefix );
 #else
-static char *unique_filename ( char *path, char *prefix, int *pFd );
+static char *unique_filename ( const char *path, const char *prefix, int *pFd );
 #endif
 
 
@@ -719,15 +719,15 @@ Bool *height_ever_changed_by_user;
 
 #ifndef HAVE_MKSTEMP
 static char *
-unique_filename (path, prefix)
-char *path;
-char *prefix;
+unique_filename (
+    const char *path,
+    const char *prefix
 #else
 static char *
-unique_filename (path, prefix, pFd)
-char *path;
-char *prefix;
-int *pFd;
+unique_filename (
+    const char *path,
+    const char *prefix,
+    int *pFd)
 #endif
 
 {
@@ -778,7 +778,7 @@ SmPointer clientData;
     TwmWindow *theWindow;
     char *clientId, *windowRole;
     FILE *configFile = NULL;
-    char *path;
+    const char *path;
     char *filename = NULL;
     Bool success = False;
     SmProp prop1, prop2, prop3, *props[3];

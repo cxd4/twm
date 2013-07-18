@@ -213,8 +213,8 @@ Bool AddFuncKey (char *name, int cont, int mods, int func, char *win_name,
 
 
 
-int CreateTitleButton (char *name, int func, char *action, MenuRoot *menuroot,
-                       Bool rightside, Bool append)
+int CreateTitleButton (const char *name, int func, const char *action,
+                       MenuRoot *menuroot, Bool rightside, Bool append)
 {
     TitleButton *tb = (TitleButton *) malloc (sizeof(TitleButton));
 
@@ -617,7 +617,7 @@ UpdateMenu()
  *  \param name  the name of the menu root
  */
 MenuRoot *
-NewMenuRoot(char *name)
+NewMenuRoot(const char *name)
 {
     MenuRoot *tmp;
 
@@ -676,8 +676,8 @@ NewMenuRoot(char *name)
  *  \param back   background color string
  */
 MenuItem *
-AddToMenu(MenuRoot *menu, char *item, char *action, MenuRoot *sub, int func,
-          char *fore, char *back)
+AddToMenu(MenuRoot *menu, const char *item, const char *action,
+          MenuRoot *sub, int func, const char *fore, const char *back)
 {
     MenuItem *tmp;
     int width;
@@ -1123,7 +1123,7 @@ PopDownMenu()
  *  \param name the name of the menu root
  */
 MenuRoot *
-FindMenuRoot(char *name)
+FindMenuRoot(const char *name)
 {
     MenuRoot *tmp;
 
@@ -1279,7 +1279,7 @@ WarpThere(TwmWindow *t)
 
 
 int
-ExecuteFunction(int func, char *action, Window w, TwmWindow *tmp_win,
+ExecuteFunction(int func, const char *action, Window w, TwmWindow *tmp_win,
                 XEvent *eventp, int context, int pulldown)
 {
     static Time last_time = 0;
@@ -2336,7 +2336,7 @@ NeedToDefer(MenuRoot *root)
  *  \param s  the string containing the command
  */
 static int
-System (char *s)
+System (const char *s)
 {
     int pid, status;
     if ((pid = fork ()) == 0) {
@@ -2351,7 +2351,7 @@ System (char *s)
 #endif
 
 void
-Execute(char *s)
+Execute(const char *s)
 {
 	/* FIXME: is all this stuff needed?  There could be security problems here. */
     static char buf[256];

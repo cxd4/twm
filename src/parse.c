@@ -83,7 +83,7 @@ static unsigned char overflowbuff[20];		/* really only need one */
 static int overflowlen;
 static unsigned char **stringListSource, *currentString;
 
-static int doparse ( int (*ifunc)(void), char *srctypename, char *srcname );
+static int doparse ( int (*ifunc)(void), const char *srctypename, const char *srcname );
 static int twmFileInput ( void );
 static int twmStringListInput ( void );
 static int ParseUsePPosition ( char *s );
@@ -99,7 +99,8 @@ int (*twmInputFunc)(void);
  * parse the .twmrc file
  *  \param filename the filename to parse.  NULL indicates $HOME/.twmrc
  */
-static int doparse (int (*ifunc)(void), char *srctypename, char*srcname)
+static int doparse (int (*ifunc)(void),
+                    const char *srctypename, const char *srcname)
 {
     mods = 0;
     ptr = 0;
@@ -160,7 +161,7 @@ int ParseTwmrc (char *filename)
     int i;
     char *home = NULL;
     int homelen = 0;
-    char *cp = NULL;
+    const char *cp = NULL;
     char tmpfilename[257];
 
     /*
@@ -302,7 +303,7 @@ TwmOutput(int c)
  ***********************************************************************/
 
 typedef struct _TwmKeyword {
-    char *name;
+    const char *name;
     int value;
     int subnum;
 } TwmKeyword;

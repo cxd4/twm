@@ -82,7 +82,7 @@ static char *Action = "";
 static char *Name = "";
 static MenuRoot	*root, *pull = NULL;
 
-static MenuRoot *GetRoot ( char *name, char *fore, char *back );
+static MenuRoot *GetRoot ( const char *name, const char *fore, const char *back );
 static void GotButton ( int butt, int func );
 static void GotKey ( char *key, int func );
 static void GotTitleButton ( char *bitmapname, int func, Bool rightside );
@@ -660,7 +660,7 @@ number		: NUMBER		{ $$ = $1; }
 
 %%
 void
-yyerror(char *s)
+yyerror(const char *s)
 {
     twmrc_error_prefix();
     fprintf (stderr, "error in input file:  %s\n", s ? s : "");
@@ -751,7 +751,7 @@ RemoveDQuote(char *str)
     *o = '\0';
 }
 
-static MenuRoot *GetRoot(char *name, char* fore, char *back)
+static MenuRoot *GetRoot(const char *name, const char* fore, const char *back)
 {
     MenuRoot *tmp;
 

@@ -281,7 +281,7 @@ ExpandFilename(char *name)
  * \param name  the filename to read
  */
 void
-GetUnknownIcon(char *name)
+GetUnknownIcon(const char *name)
 {
     if ((Scr->UnknownPm = GetBitmap(name)) != None)
     {
@@ -300,7 +300,7 @@ GetUnknownIcon(char *name)
  *  \param[out] heightp	 pointer to height of bitmap
  */
 Pixmap
-FindBitmap (char *name, unsigned *widthp, unsigned *heightp)
+FindBitmap (const char *name, unsigned *widthp, unsigned *heightp)
 {
     char *bigname;
     Pixmap pm;
@@ -315,7 +315,7 @@ FindBitmap (char *name, unsigned *widthp, unsigned *heightp)
     if (name[0] == ':') {
 	int i;
 	static struct {
-	    char *name;
+	    const char *name;
 	    Pixmap (*proc)(unsigned int *, unsigned int *);
 	} pmtab[] = {
 	    { TBPM_DOT,		CreateDotPixmap },
@@ -378,7 +378,7 @@ FindBitmap (char *name, unsigned *widthp, unsigned *heightp)
 }
 
 Pixmap
-GetBitmap (char *name)
+GetBitmap (const char *name)
 {
     return FindBitmap (name, &JunkWidth, &JunkHeight);
 }
@@ -464,7 +464,7 @@ LocateStandardColormaps()
 }
 
 void
-GetColor(int kind, Pixel *what, char *name)
+GetColor(int kind, Pixel *what, const char *name)
 {
     XColor color, junkcolor;
     Status stat = 0;
@@ -542,7 +542,7 @@ GetColor(int kind, Pixel *what, char *name)
 }
 
 void
-GetColorValue(int kind, XColor *what, char *name)
+GetColorValue(int kind, XColor *what, const char *name)
 {
     XColor junkcolor;
     Colormap cmap = Scr->TwmRoot.cmaps.cwins[0]->colormap->c;
@@ -579,7 +579,7 @@ GetColorValue(int kind, XColor *what, char *name)
 void
 GetFont(MyFont *font)
 {
-    char *deffontname = "fixed";
+    const char *deffontname = "fixed";
     char **missing_charset_list_return;
     int missing_charset_count_return;
     char *def_string_return;
@@ -651,7 +651,7 @@ GetFont(MyFont *font)
 }
 
 int
-MyFont_TextWidth(MyFont *font, char *string, int len)
+MyFont_TextWidth(MyFont *font, const char *string, int len)
 {
     XRectangle ink_rect;
     XRectangle logical_rect;
@@ -666,7 +666,7 @@ MyFont_TextWidth(MyFont *font, char *string, int len)
 
 void
 MyFont_DrawImageString(Display *dpy, Drawable d, MyFont *font, GC gc,
-                       int x, int y, char *string, int len)
+                       int x, int y, const char *string, int len)
 {
     if (use_fontset) {
 	XmbDrawImageString(dpy, d, font->fontset, gc, x, y, string, len);
@@ -677,7 +677,7 @@ MyFont_DrawImageString(Display *dpy, Drawable d, MyFont *font, GC gc,
 
 void
 MyFont_DrawString(Display *dpy, Drawable d, MyFont *font, GC gc,
-                  int x, int y, char *string, int len)
+                  int x, int y, const char *string, int len)
 {
     if (use_fontset) {
 	XmbDrawString(dpy, d, font->fontset, gc, x, y, string, len);
