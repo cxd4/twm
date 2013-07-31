@@ -79,10 +79,7 @@ static char *unique_filename ( const char *path, const char *prefix, int *pFd );
 
 
 char *
-GetClientID (window)
-
-Window window;
-
+GetClientID (Window window)
 {
     char *client_id = NULL;
     Window client_leader;
@@ -120,10 +117,7 @@ Window window;
 
 
 char *
-GetWindowRole (window)
-
-Window window;
-
+GetWindowRole (Window window)
 {
     XTextProperty tp;
 
@@ -174,11 +168,7 @@ write_short (FILE *file, short s)
 
 
 int
-write_counted_string (file, string)
-
-FILE	*file;
-char	*string;
-
+write_counted_string (FILE *file, char *string)
 {
     if (string)
     {
@@ -201,11 +191,7 @@ char	*string;
 
 
 int
-read_byte (file, bp)
-
-FILE		*file;
-unsigned char	*bp;
-
+read_byte (FILE *file, unsigned char *bp)
 {
     if (fread ((char *) bp, 1, 1, file) != 1)
 	return 0;
@@ -214,11 +200,7 @@ unsigned char	*bp;
 
 
 int
-read_ushort (file, shortp)
-
-FILE		*file;
-unsigned short	*shortp;
-
+read_ushort (FILE *file, unsigned short *shortp)
 {
     unsigned char   file_short[2];
 
@@ -230,11 +212,7 @@ unsigned short	*shortp;
 
 
 int
-read_short (file, shortp)
-
-FILE	*file;
-short	*shortp;
-
+read_short (FILE *file, short *shortp)
 {
     unsigned char   file_short[2];
 
@@ -246,11 +224,7 @@ short	*shortp;
 
 
 int
-read_counted_string (file, stringp)
-
-FILE	*file;
-char	**stringp;
-
+read_counted_string (FILE *file, char **stringp)
 {
     unsigned char  len;
     char	   *data;
@@ -316,13 +290,8 @@ char	**stringp;
  */
 
 int
-WriteWinConfigEntry (configFile, theWindow, clientId, windowRole)
-
-FILE *configFile;
-TwmWindow *theWindow;
-char *clientId;
-char *windowRole;
-
+WriteWinConfigEntry (FILE *configFile, TwmWindow *theWindow,
+                     char *clientId, char *windowRole)
 {
     char **wm_command;
     int wm_command_count, i;
@@ -543,10 +512,7 @@ give_up:
 
 
 void
-ReadWinConfigFile (filename)
-
-char *filename;
-
+ReadWinConfigFile (char *filename)
 {
     FILE *configFile;
     TWMWinConfigEntry *entry;
@@ -580,19 +546,15 @@ char *filename;
 
 
 int
-GetWindowConfig (theWindow, x, y, width, height,
-    iconified, icon_info_present, icon_x, icon_y,
-    width_ever_changed_by_user, height_ever_changed_by_user)
-
-TwmWindow *theWindow;
-short *x, *y;
-unsigned short *width, *height;
-Bool *iconified;
-Bool *icon_info_present;
-short *icon_x, *icon_y;
-Bool *width_ever_changed_by_user;
-Bool *height_ever_changed_by_user;
-
+GetWindowConfig (
+    TwmWindow *theWindow,
+    short *x, short *y,
+    unsigned short *width, unsigned short *height,
+    Bool *iconified,
+    Bool *icon_info_present,
+    short *icon_x, short *icon_y,
+    Bool *width_ever_changed_by_user,
+    Bool *height_ever_changed_by_user)
 {
     char *clientId, *windowRole;
     TWMWinConfigEntry *ptr;
@@ -767,11 +729,7 @@ unique_filename (
 
 
 void
-SaveYourselfPhase2CB (smcConn, clientData)
-
-SmcConn smcConn;
-SmPointer clientData;
-
+SaveYourselfPhase2CB (SmcConn smcConn, SmPointer clientData)
 {
     int scrnum;
     ScreenInfo *theScreen;
@@ -949,15 +907,13 @@ SmPointer clientData;
 
 
 void
-SaveYourselfCB (smcConn, clientData, saveType, shutdown, interactStyle, fast)
-
-SmcConn smcConn;
-SmPointer clientData;
-int saveType;
-Bool shutdown;
-int interactStyle;
-Bool fast;
-
+SaveYourselfCB (
+    SmcConn smcConn,
+    SmPointer clientData,
+    int saveType,
+    Bool shutdown,
+    int interactStyle,
+    Bool fast)
 {
     if (!SmcRequestSaveYourselfPhase2 (smcConn, SaveYourselfPhase2CB, NULL))
     {
@@ -971,11 +927,7 @@ Bool fast;
 
 
 void
-DieCB (smcConn, clientData)
-
-SmcConn smcConn;
-SmPointer clientData;
-
+DieCB (SmcConn smcConn, SmPointer clientData)
 {
     SmcCloseConnection (smcConn, 0, NULL);
     XtRemoveInput (iceInputId);
@@ -985,11 +937,7 @@ SmPointer clientData;
 
 
 void
-SaveCompleteCB (smcConn, clientData)
-
-SmcConn smcConn;
-SmPointer clientData;
-
+SaveCompleteCB (SmcConn smcConnm, SmPointer clientData)
 {
     ;
 }
@@ -997,11 +945,7 @@ SmPointer clientData;
 
 
 void
-ShutdownCancelledCB (smcConn, clientData)
-
-SmcConn smcConn;
-SmPointer clientData;
-
+ShutdownCancelledCB (SmcConn smcConn, SmPointer clientData)
 {
     if (!sent_save_done)
     {
@@ -1013,12 +957,7 @@ SmPointer clientData;
 
 
 void
-ProcessIceMsgProc (client_data, source, id)
-
-XtPointer	client_data;
-int 		*source;
-XtInputId	*id;
-
+ProcessIceMsgProc (XtPointer client_data, int *source, XtInputId *id)
 {
     IceConn	ice_conn = (IceConn) client_data;
 
@@ -1028,10 +967,7 @@ XtInputId	*id;
 
 
 void
-ConnectToSessionManager (previous_id)
-
-char *previous_id;
-
+ConnectToSessionManager (char *previous_id)
 {
     char errorMsg[256];
     unsigned long mask;

@@ -1349,8 +1349,8 @@ HandleMapRequest(void)
 
 
 
-void SimulateMapRequest (w)
-    Window w;
+void
+SimulateMapRequest (Window w)
 {
     Event.xmaprequest.window = w;
     HandleMapRequest ();
@@ -2434,8 +2434,7 @@ Transient(Window w, Window *propw)
  *  \param  w the window
  */
 ScreenInfo *
-FindScreenInfo(w)
-    Window w;
+FindScreenInfo(Window w)
 {
     XWindowAttributes attr;
     int scrnum;
@@ -2455,8 +2454,8 @@ FindScreenInfo(w)
 
 
 
-static void flush_expose (w)
-    Window w;
+static void
+flush_expose (Window w)
 {
     XEvent dummy;
 
