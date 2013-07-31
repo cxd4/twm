@@ -78,7 +78,7 @@ static char *unique_filename ( const char *path, const char *prefix, int *pFd );
 #endif
 
 
-char *
+static char *
 GetClientID (Window window)
 {
     char *client_id = NULL;
@@ -116,7 +116,7 @@ GetClientID (Window window)
 
 
 
-char *
+static char *
 GetWindowRole (Window window)
 {
     XTextProperty tp;
@@ -132,7 +132,7 @@ GetWindowRole (Window window)
 
 
 
-int
+static int
 write_byte (FILE *file, unsigned char b)
 {
     if (fwrite ((char *) &b, 1, 1, file) != 1)
@@ -141,7 +141,7 @@ write_byte (FILE *file, unsigned char b)
 }
 
 
-int
+static int
 write_ushort (FILE *file, unsigned short s)
 {
     unsigned char   file_short[2];
@@ -154,7 +154,7 @@ write_ushort (FILE *file, unsigned short s)
 }
 
 
-int
+static int
 write_short (FILE *file, short s)
 {
     unsigned char   file_short[2];
@@ -167,7 +167,7 @@ write_short (FILE *file, short s)
 }
 
 
-int
+static int
 write_counted_string (FILE *file, char *string)
 {
     if (string)
@@ -190,7 +190,7 @@ write_counted_string (FILE *file, char *string)
 
 
 
-int
+static int
 read_byte (FILE *file, unsigned char *bp)
 {
     if (fread ((char *) bp, 1, 1, file) != 1)
@@ -199,7 +199,7 @@ read_byte (FILE *file, unsigned char *bp)
 }
 
 
-int
+static int
 read_ushort (FILE *file, unsigned short *shortp)
 {
     unsigned char   file_short[2];
@@ -211,7 +211,7 @@ read_ushort (FILE *file, unsigned short *shortp)
 }
 
 
-int
+static int
 read_short (FILE *file, short *shortp)
 {
     unsigned char   file_short[2];
@@ -223,7 +223,7 @@ read_short (FILE *file, short *shortp)
 }
 
 
-int
+static int
 read_counted_string (FILE *file, char **stringp)
 {
     unsigned char  len;
@@ -289,7 +289,7 @@ read_counted_string (FILE *file, char **stringp)
  * Height ever changed by user		1
  */
 
-int
+static int
 WriteWinConfigEntry (FILE *configFile, TwmWindow *theWindow,
                      char *clientId, char *windowRole)
 {
@@ -383,7 +383,7 @@ WriteWinConfigEntry (FILE *configFile, TwmWindow *theWindow,
 }
 
 
-int
+static int
 ReadWinConfigEntry (FILE *configFile, unsigned short version,
 		    TWMWinConfigEntry **pentry)
 {
@@ -728,7 +728,7 @@ unique_filename (
 
 
 
-void
+static void
 SaveYourselfPhase2CB (SmcConn smcConn, SmPointer clientData)
 {
     int scrnum;
@@ -906,7 +906,7 @@ SaveYourselfPhase2CB (SmcConn smcConn, SmPointer clientData)
 
 
 
-void
+static void
 SaveYourselfCB (
     SmcConn smcConn,
     SmPointer clientData,
@@ -926,7 +926,7 @@ SaveYourselfCB (
 
 
 
-void
+static void
 DieCB (SmcConn smcConn, SmPointer clientData)
 {
     SmcCloseConnection (smcConn, 0, NULL);
@@ -936,7 +936,7 @@ DieCB (SmcConn smcConn, SmPointer clientData)
 
 
 
-void
+static void
 SaveCompleteCB (SmcConn smcConnm, SmPointer clientData)
 {
     ;
@@ -944,7 +944,7 @@ SaveCompleteCB (SmcConn smcConnm, SmPointer clientData)
 
 
 
-void
+static void
 ShutdownCancelledCB (SmcConn smcConn, SmPointer clientData)
 {
     if (!sent_save_done)
@@ -956,7 +956,7 @@ ShutdownCancelledCB (SmcConn smcConn, SmPointer clientData)
 
 
 
-void
+static void
 ProcessIceMsgProc (XtPointer client_data, int *source, XtInputId *id)
 {
     IceConn	ice_conn = (IceConn) client_data;
