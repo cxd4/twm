@@ -874,7 +874,7 @@ static Bool CheckColormapArg (char *s)
 
 
 void
-twmrc_error_prefix ()
+twmrc_error_prefix (void)
 {
     fprintf (stderr, "%s:  line %d:  ", ProgramName, yylineno);
 }

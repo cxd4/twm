@@ -137,7 +137,7 @@ void SetRaiseWindow (TwmWindow *tmp)
  * initialize the event jump table.
  */
 void
-InitEvents()
+InitEvents(void)
 {
     int i;
 
@@ -268,7 +268,7 @@ Window WindowOfEvent (XEvent *e)
  *      handle a single X event stored in global var Event
  * this routine for is for a call during an f.move
  */
-Bool DispatchEvent2 ()
+Bool DispatchEvent2 (void)
 {
     Window w = Event.xany.window;
     XPointer context_data;
@@ -299,7 +299,7 @@ Bool DispatchEvent2 ()
 /**
  * handle a single X event stored in global var Event
  */
-Bool DispatchEvent ()
+Bool DispatchEvent (void)
 {
     Window w = Event.xany.window;
     XPointer context_data;
@@ -330,7 +330,7 @@ Bool DispatchEvent ()
  * handle X events
  */
 void
-HandleEvents()
+HandleEvents(void)
 {
     while (TRUE)
     {
@@ -364,7 +364,7 @@ HandleEvents()
  *
  */
 void
-HandleColormapNotify()
+HandleColormapNotify(void)
 {
     XColormapEvent *cevent = (XColormapEvent *) &Event;
     ColormapWindow *cwin, **cwins;
@@ -524,7 +524,7 @@ HandleColormapNotify()
  *
  */
 void
-HandleVisibilityNotify()
+HandleVisibilityNotify(void)
 {
     XVisibilityEvent *vevent = (XVisibilityEvent *) &Event;
     ColormapWindow *cwin;
@@ -561,7 +561,7 @@ int MovedFromKeyPress = False;
  * key press event handler
  */
 void
-HandleKeyPress()
+HandleKeyPress(void)
 {
     KeySym ks;
     FuncKey *key;
@@ -734,7 +734,7 @@ free_cwins (TwmWindow *tmp)
  * property notify event handler
  */
 void
-HandlePropertyNotify()
+HandlePropertyNotify(void)
 {
     char *name = NULL;
     unsigned long valuemask;		/* mask for create windows */
@@ -943,7 +943,7 @@ HandlePropertyNotify()
  * procedure to re-position the icon window and name
  */
 void
-RedoIconName()
+RedoIconName(void)
 {
     int x, y;
 
@@ -1006,7 +1006,7 @@ RedoIconName()
  *client message event handler
  */
 void
-HandleClientMessage()
+HandleClientMessage(void)
 {
     if (Event.xclient.message_type == _XA_WM_CHANGE_STATE)
     {
@@ -1035,7 +1035,7 @@ HandleClientMessage()
  * expose event handler
  */
 void
-HandleExpose()
+HandleExpose(void)
 {
     XPointer context_data;
 
@@ -1164,7 +1164,7 @@ static void remove_window_from_ring (TwmWindow *tmp)
  * DestroyNotify event handler
  */
 void
-HandleDestroyNotify()
+HandleDestroyNotify(void)
 {
     int i;
 
@@ -1262,7 +1262,7 @@ HandleDestroyNotify()
 
 
 void
-HandleCreateNotify()
+HandleCreateNotify(void)
 {
 #ifdef DEBUG_EVENTS
     fprintf(stderr, "CreateNotify w = 0x%x\n", Event.xcreatewindow.window);
@@ -1278,7 +1278,7 @@ HandleCreateNotify()
  *	HandleMapRequest - MapRequest event handler
  */
 void
-HandleMapRequest()
+HandleMapRequest(void)
 {
     XPointer context_data;
     int zoom_save;
@@ -1362,7 +1362,7 @@ void SimulateMapRequest (w)
  *	MapNotify event handler
  */
 void
-HandleMapNotify()
+HandleMapNotify(void)
 {
     if (Tmp_win == NULL)
 	return;
@@ -1396,7 +1396,7 @@ HandleMapNotify()
  * UnmapNotify event handler
  */
 void
-HandleUnmapNotify()
+HandleUnmapNotify(void)
 {
     int dstx, dsty;
     Window dumwin;
@@ -1464,7 +1464,7 @@ HandleUnmapNotify()
  * MotionNotify event handler
  */
 void
-HandleMotionNotify()
+HandleMotionNotify(void)
 {
     XPointer context_data;
 
@@ -1494,7 +1494,7 @@ HandleMotionNotify()
  * ButtonRelease event handler
  */
 void
-HandleButtonRelease()
+HandleButtonRelease(void)
 {
     int xl, xr, yt, yb, w, h;
     unsigned mask;
@@ -1705,7 +1705,7 @@ do_menu (MenuRoot *menu, Window w)
  * ButtonPress event handler
  */
 void
-HandleButtonPress()
+HandleButtonPress(void)
 {
     unsigned int modifier;
     Cursor cur;
@@ -1983,7 +1983,7 @@ HENQueueScanner(Display *dpy, XEvent *ev, char *args)
  * EnterNotify event handler
  */
 void
-HandleEnterNotify()
+HandleEnterNotify(void)
 {
     MenuRoot *mr;
     XEnterWindowEvent *ewp = &Event.xcrossing;
@@ -2171,7 +2171,7 @@ HLNQueueScanner(Display *dpy, XEvent *ev, char *args)
  * LeaveNotify event handler
  */
 void
-HandleLeaveNotify()
+HandleLeaveNotify(void)
 {
     HLNScanArgs scanArgs;
     XEvent dummy;
@@ -2246,7 +2246,7 @@ HandleLeaveNotify()
  *	HandleConfigureRequest - ConfigureRequest event handler
  */
 void
-HandleConfigureRequest()
+HandleConfigureRequest(void)
 {
     XWindowChanges xwc;
     unsigned long xwcm;
@@ -2380,7 +2380,7 @@ HandleConfigureRequest()
  * shape notification event handler
  */
 void
-HandleShapeNotify ()
+HandleShapeNotify (void)
 {
     XShapeEvent	    *sev = (XShapeEvent *) &Event;
 
@@ -2402,7 +2402,7 @@ HandleShapeNotify ()
  * unknown event handler
  */
 void
-HandleUnknown()
+HandleUnknown(void)
 {
 #ifdef DEBUG_EVENTS
     fprintf(stderr, "type = %d\n", Event.type);
@@ -2581,7 +2581,7 @@ InstallWindowColormaps (int type, TwmWindow *tmp)
  *	   other colormap list would potentially be loaded anyway.
  */
 void
-InstallRootColormap()
+InstallRootColormap(void)
 {
     TwmWindow *tmp;
     if (Scr->cmapInfo.root_pushes == 0) {
@@ -2617,7 +2617,7 @@ UninstallRootColormapQScanner(Display *dpy, XEvent *ev, char *args)
 
 
 void
-UninstallRootColormap()
+UninstallRootColormap(void)
 {
     char args;
     XEvent dummy;

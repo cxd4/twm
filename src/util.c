@@ -443,7 +443,7 @@ RemoveRGBColormap (Atom a)
 }
 
 void
-LocateStandardColormaps()
+LocateStandardColormaps(void)
 {
     Atom *atoms;
     int natoms;

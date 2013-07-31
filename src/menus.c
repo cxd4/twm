@@ -124,7 +124,7 @@ static void send_clientmessage ( Window w, Atom a, Time timestamp );
  * initialize menu roots
  */
 void
-InitMenus()
+InitMenus(void)
 {
     int i, j, k;
     FuncKey *key, *tmp;
@@ -283,7 +283,7 @@ int CreateTitleButton (const char *name, int func, const char *action,
  * the button, then put in a question; if we can't find the question mark,
  * something is wrong and we are probably going to be in trouble later on.
  */
-void InitTitlebarButtons ()
+void InitTitlebarButtons (void)
 {
     TitleButton *tb;
     int h;
@@ -472,7 +472,7 @@ PaintMenu(MenuRoot *mr, XEvent *e)
 static Bool fromMenu;
 
 void
-UpdateMenu()
+UpdateMenu(void)
 {
     MenuItem *mi;
     int i, x, y, x_root, y_root, entry;
@@ -741,7 +741,7 @@ AddToMenu(MenuRoot *menu, const char *item, const char *action,
 
 
 void
-MakeMenus()
+MakeMenus(void)
 {
     MenuRoot *mr;
 
@@ -1082,7 +1082,7 @@ PopUpMenu (MenuRoot *menu, int x, int y, Bool center)
  * unhighlight the current menu selection and take down the menus
  */
 void
-PopDownMenu()
+PopDownMenu(void)
 {
     MenuRoot *tmp;
 
@@ -2275,7 +2275,7 @@ DeferExecution(int context, int func, Cursor cursor)
  *regrab the pointer with the LastCursor;
  */
 void
-ReGrab()
+ReGrab(void)
 {
     XGrabPointer(dpy, Scr->Root, True,
 	ButtonPressMask | ButtonReleaseMask,
@@ -2398,7 +2398,7 @@ Execute(const char *s)
  * put input focus on the root window.
  */
 void
-FocusOnRoot()
+FocusOnRoot(void)
 {
     SetFocus ((TwmWindow *) NULL, LastTimestamp());
     if (Scr->Focus != NULL)
@@ -2784,7 +2784,7 @@ BumpWindowColormap (TwmWindow *tmp, int inc)
 
 
 void
-HideIconManager ()
+HideIconManager (void)
 {
     SetMapStateProp (Scr->iconmgr.twm_win, WithdrawnState);
     XUnmapWindow(dpy, Scr->iconmgr.twm_win->frame);

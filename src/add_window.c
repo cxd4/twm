@@ -981,7 +981,7 @@ static void do_add_binding (int button, int context, int modifier, int func)
 }
 
 void
-AddDefaultBindings ()
+AddDefaultBindings (void)
 {
     /*
      * The bindings are stored in Scr->Mouse, indexed by
@@ -1161,7 +1161,7 @@ static Window CreateHighlightWindow (TwmWindow *tmp_win)
 }
 
 
-void ComputeCommonTitleOffsets ()
+void ComputeCommonTitleOffsets (void)
 {
     int buttonwidth = (Scr->TBInfo.width + Scr->TBInfo.pad);
 

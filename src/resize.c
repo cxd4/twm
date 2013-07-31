@@ -523,7 +523,7 @@ DisplaySize(TwmWindow *tmp_win, int width, int height)
  * finish the resize operation
  */
 void
-EndResize()
+EndResize(void)
 {
     TwmWindow *tmp_win;
 

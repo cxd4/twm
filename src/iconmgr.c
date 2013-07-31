@@ -54,7 +54,8 @@ int iconifybox_height = siconify_height;
 /**
  * create all the icon manager windows for this screen.
  */
-void CreateIconManagers()
+void
+CreateIconManagers(void)
 {
     IconMgr *p;
     int mask;

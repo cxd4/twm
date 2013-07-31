@@ -235,7 +235,7 @@ int ParseStringList (unsigned char **sl)
  *
  *  \return the next input character
  */
-static int twmFileInput()
+static int twmFileInput(void)
 {
     if (overflowlen) return (int) overflowbuff[--overflowlen];
 
@@ -250,7 +250,7 @@ static int twmFileInput()
     return ((int)buff[ptr++]);
 }
 
-static int twmStringListInput()
+static int twmStringListInput(void)
 {
     if (overflowlen) return (int) overflowbuff[--overflowlen];
 
@@ -1007,7 +1007,7 @@ do_var_savecolor(int key)
  *                        in the root window property.
  */
 void
-assign_var_savecolor()
+assign_var_savecolor(void)
 {
   Cptr cp = chead;
   while (cp != NULL) {

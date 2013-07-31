@@ -316,7 +316,7 @@ FreeIconEntries (IconRegion *ir)
 }
 
 void
-FreeIconRegions()
+FreeIconRegions(void)
 {
     IconRegion *ir, *tmp;
 

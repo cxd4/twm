@@ -683,7 +683,7 @@ main(int argc, char *argv[])
  * initialize twm variables
  */
 void
-InitVariables()
+InitVariables(void)
 {
     FreeList(&Scr->BorderColorL);
     FreeList(&Scr->IconBorderColorL);
@@ -832,7 +832,7 @@ InitVariables()
 }
 
 void
-CreateFonts ()
+CreateFonts (void)
 {
     GetFont(&Scr->TitleBarFont);
     GetFont(&Scr->MenuFont);
