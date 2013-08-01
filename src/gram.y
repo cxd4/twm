@@ -89,6 +89,7 @@ static void GotTitleButton ( char *bitmapname, int func, Bool rightside );
 static Bool CheckWarpScreenArg ( char *s );
 static Bool CheckWarpRingArg ( char *s );
 static Bool CheckColormapArg ( char *s );
+static void RemoveDQuote ( char *str );
 
 static char *ptr;
 static name_list **list;
@@ -98,6 +99,8 @@ int mods = 0;
 unsigned int mods_used = (ShiftMask | ControlMask | Mod1Mask);
 
 extern int yylineno;
+static void yyerror ( const char *s );
+
 %}
 
 %union
@@ -659,7 +662,7 @@ number		: NUMBER		{ $$ = $1; }
 		;
 
 %%
-void
+static void
 yyerror(const char *s)
 {
     twmrc_error_prefix();
@@ -667,7 +670,7 @@ yyerror(const char *s)
     ParseError = 1;
 }
 
-void
+static void
 RemoveDQuote(char *str)
 {
     register char *i, *o;

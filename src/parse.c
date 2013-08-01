@@ -87,6 +87,7 @@ static int doparse ( int (*ifunc)(void), const char *srctypename, const char *sr
 static int twmFileInput ( void );
 static int twmStringListInput ( void );
 static int ParseUsePPosition ( char *s );
+static int ParseStringList ( unsigned char **sl );
 
 extern int yylineno;
 
@@ -222,7 +223,7 @@ int ParseTwmrc (char *filename)
     }
 }
 
-int ParseStringList (unsigned char **sl)
+static int ParseStringList (unsigned char **sl)
 {
     stringListSource = sl;
     currentString = *sl;
@@ -943,7 +944,7 @@ int do_color_keyword (int keyword, int colormode, char *s)
 /**
  * Save a pixel value in twm root window color property.
  */
-void
+static void
 put_pixel_on_root(Pixel pixel)
 {
   int           i, addPixel = 1;

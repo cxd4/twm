@@ -109,6 +109,7 @@ static Bool HENQueueScanner ( Display *dpy, XEvent *ev, char *args );
 static Bool HLNQueueScanner ( Display *dpy, XEvent *ev, char *args );
 static void flush_expose ( Window w );
 static Bool UninstallRootColormapQScanner ( Display *dpy, XEvent *ev, char *args );
+static void RedoIconName ( void );
 
 int ButtonPressed = -1;
 int Cancel = FALSE;
@@ -942,7 +943,7 @@ HandlePropertyNotify(void)
 /**
  * procedure to re-position the icon window and name
  */
-void
+static void
 RedoIconName(void)
 {
     int x, y;

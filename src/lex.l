@@ -72,7 +72,7 @@ int yylineno;
 
 #undef YY_INPUT
 #define YY_INPUT(buf,result,size) ((result) = doinput((buf),(size)))
-int doinput (char *buf, int size)
+static int doinput (char *buf, int size)
 {
 	int c;
 

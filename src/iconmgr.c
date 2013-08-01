@@ -42,6 +42,8 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
 
+static void InsertInIconManager ( IconMgr *ip, WList *tmp, TwmWindow *tmp_win );
+
 int iconmgr_textx = siconify_width+11;
 static WList *Active = NULL;
 WList *DownIconManager = NULL;
@@ -451,7 +453,7 @@ WList *AddIconManager(TwmWindow *tmp_win)
  *  \param ip  the icon manager pointer
  *  \param tmp the entry to insert
  */
-void InsertInIconManager(IconMgr *ip, WList *tmp, TwmWindow *tmp_win)
+static void InsertInIconManager(IconMgr *ip, WList *tmp, TwmWindow *tmp_win)
 {
     WList *tmp1;
     int added;
@@ -493,7 +495,7 @@ void InsertInIconManager(IconMgr *ip, WList *tmp, TwmWindow *tmp_win)
     }
 }
 
-void RemoveFromIconManager(IconMgr *ip, WList *tmp)
+static void RemoveFromIconManager(IconMgr *ip, WList *tmp)
 {
     if (tmp->prev == NULL)
 	ip->first = tmp->next;

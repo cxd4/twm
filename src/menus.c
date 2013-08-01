@@ -114,6 +114,16 @@ static Cursor LastCursor;
 static Bool belongs_to_twm_window ( TwmWindow *t, Window w );
 static void Identify ( TwmWindow *t );
 static void send_clientmessage ( Window w, Atom a, Time timestamp );
+static void BumpWindowColormap ( TwmWindow *tmp, int inc );
+static int  DeferExecution ( int context, int func, Cursor cursor );
+static Bool NeedToDefer ( MenuRoot *root );
+static void DestroyMenu ( MenuRoot *menu );
+static void MakeMenu ( MenuRoot *mr );
+static void Execute ( const char *s );
+static void HideIconManager ( void );
+static void WarpAlongRing ( XButtonEvent *ev, Bool forward );
+static int  WarpThere ( TwmWindow * t );
+static void WarpToWindow ( TwmWindow *t );
 
 #define SHADOWWIDTH 5			/* in pixels */
 
@@ -755,7 +765,7 @@ MakeMenus(void)
 }
 
 
-void
+static void
 MakeMenu(MenuRoot *mr)
 {
     MenuItem *start, *end, *cur, *tmp;
@@ -1157,7 +1167,7 @@ belongs_to_twm_window (TwmWindow *t, Window w)
 
 
 
-void
+static void
 resizeFromCenter(Window w, TwmWindow *tmp_win)
 {
   int lastx, lasty, bw2;
@@ -1265,7 +1275,7 @@ resizeFromCenter(Window w, TwmWindow *tmp_win)
  *           else FALSE to abort
  */
 
-int
+static int
 WarpThere(TwmWindow *t)
 {
     if (Scr->WarpUnmapped || t->mapped) {
@@ -2250,7 +2260,7 @@ ExecuteFunction(int func, const char *action, Window w, TwmWindow *tmp_win,
  *	\param func    the function to defer
  *  \param cursor  cursor the cursor to display while waiting
  */
-int
+static int
 DeferExecution(int context, int func, Cursor cursor)
 {
   if (context == C_ROOT)
@@ -2291,7 +2301,7 @@ ReGrab(void)
  *
  *  \param root the menu root to check
  */
-Bool
+static Bool
 NeedToDefer(MenuRoot *root)
 {
     MenuItem *mitem;
@@ -2350,7 +2360,7 @@ System (const char *s)
 
 #endif
 
-void
+static void
 Execute(const char *s)
 {
 	/* FIXME: is all this stuff needed?  There could be security problems here. */
@@ -2739,7 +2749,7 @@ WarpToScreen (int n, int inc)
 /**
  * rotate our internal copy of WM_COLORMAP_WINDOWS
  */
-void
+static void
 BumpWindowColormap (TwmWindow *tmp, int inc)
 {
     int i, j, previously_installed;
@@ -2783,7 +2793,7 @@ BumpWindowColormap (TwmWindow *tmp, int inc)
 }
 
 
-void
+static void
 HideIconManager (void)
 {
     SetMapStateProp (Scr->iconmgr.twm_win, WithdrawnState);
@@ -2813,7 +2823,7 @@ SetBorder (TwmWindow *tmp, Bool onoroff)
 }
 
 
-void
+static void
 DestroyMenu (MenuRoot *menu)
 {
     MenuItem *item;
@@ -2838,7 +2848,7 @@ DestroyMenu (MenuRoot *menu)
  * warping routines
  */
 
-void
+static void
 WarpAlongRing (XButtonEvent *ev, Bool forward)
 {
     TwmWindow *r, *head;
@@ -2888,7 +2898,7 @@ WarpAlongRing (XButtonEvent *ev, Bool forward)
 
 
 
-void
+static void
 WarpToWindow (TwmWindow *t)
 {
     int x, y;

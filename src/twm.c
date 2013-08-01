@@ -86,6 +86,8 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/extensions/Print.h>
 #endif /* XPRINT */
 
+static void InitVariables ( void );
+
 XtAppContext appContext;	/* Xt application context */
 XtSignalId si;
 
@@ -682,7 +684,7 @@ main(int argc, char *argv[])
 /**
  * initialize twm variables
  */
-void
+static void
 InitVariables(void)
 {
     FreeList(&Scr->BorderColorL);

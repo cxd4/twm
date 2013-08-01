@@ -341,7 +341,6 @@ typedef struct TWMWinConfigEntry
 
 #include <X11/Xosdefs.h>
 #include <stdlib.h>
-extern void InitVariables ( void );
 extern void CreateFonts ( void );
 extern void RestoreWithdrawnLocation ( TwmWindow *tmp );
 extern void Reborder( Time time);
@@ -403,9 +402,6 @@ extern void twmrc_error_prefix ( void );
 
 extern int yyparse ( void );
 extern int yylex ( void );
-extern void yyerror ( const char *s );
-extern int doinput ( char *buf, int size );
-extern void RemoveDQuote ( char *str );
 
 extern Atom TwmAtoms[];
 

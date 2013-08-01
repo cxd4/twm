@@ -98,13 +98,13 @@ splitEntry (IconEntry *ie, int grav1, int grav2, int w, int h)
     }
 }
 
-int
+static inline int
 roundUp (int v, int multiple)
 {
     return ((v + multiple - 1) / multiple) * multiple;
 }
 
-void
+static void
 PlaceIcon(TwmWindow *tmp_win, int def_x, int def_y, int *final_x, int *final_y)
 {
     IconRegion	*ir;
