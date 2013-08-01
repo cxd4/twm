@@ -981,7 +981,7 @@ do_string_savecolor(int colormode, char *s)
 }
 
 typedef struct _cnode {int i; struct _cnode *next;} Cnode, *Cptr;
-Cptr chead = NULL;
+static Cptr chead = NULL;
 
 /**
  * save a color from a var in the twmrc file

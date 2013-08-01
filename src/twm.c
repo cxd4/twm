@@ -103,14 +103,14 @@ ScreenInfo **ScreenList;	/* structures for each screen */
 ScreenInfo *Scr = NULL;		/* the cur and prev screens */
 int PreviousScreen;		/* last screen that we were on */
 int FirstScreen;		/* TRUE ==> first screen of display */
-Bool PrintErrorMessages = False;	/* controls error messages */
+static Bool PrintErrorMessages = False;	/* controls error messages */
 static int RedirectError;	/* TRUE ==> another window manager running */
 static int TwmErrorHandler ( Display *dpy, XErrorEvent *event );	/* for settting RedirectError */
 static int CatchRedirectError ( Display *dpy, XErrorEvent *event );	/* for everything else */
 static SIGNAL_T sigHandler(int);
 char Info[INFO_LINES][INFO_SIZE];		/* info strings to print */
 int InfoLines;
-char *InitFile = NULL;
+static char *InitFile = NULL;
 
 Cursor UpperLeftCursor;		/* upper Left corner cursor */
 Cursor RightButt;
@@ -145,7 +145,7 @@ char **Argv;
 
 Bool RestartPreviousState = False;	/* try to restart in previous state */
 
-unsigned long black, white;
+static unsigned long black, white;
 
 Atom TwmAtoms[11];
 

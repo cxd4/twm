@@ -63,10 +63,10 @@ Author:  Ralph Mor, X Consortium
 #include "session.h"
 
 SmcConn smcConn = NULL;
-XtInputId iceInputId;
-char *twm_clientId;
-TWMWinConfigEntry *winConfigHead = NULL;
-Bool sent_save_done = 0;
+static XtInputId iceInputId;
+static char *twm_clientId;
+static TWMWinConfigEntry *winConfigHead = NULL;
+static Bool sent_save_done = 0;
 
 #define SAVEFILE_VERSION 2
 

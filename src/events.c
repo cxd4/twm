@@ -76,17 +76,17 @@ in this Software without prior written authorization from The Open Group.
 
 #define MAX_X_EVENT 256
 event_proc EventHandler[MAX_X_EVENT]; /* event handler jump table */
-const char *Action;
+static const char *Action;
 int Context = C_NO_CONTEXT;	/* current button press context */
-TwmWindow *ButtonWindow;	/* button press window structure */
-XEvent ButtonEvent;		/* button press event */
+static TwmWindow *ButtonWindow;	/* button press window structure */
+static XEvent ButtonEvent;	/* button press event */
 XEvent Event;			/* the current event */
-TwmWindow *Tmp_win;		/* the current twm window */
+static TwmWindow *Tmp_win;	/* the current twm window */
 
 /** Used in HandleEnterNotify to remove border highlight from a window
  * that has not recieved a LeaveNotify event because of a pointer grab
  */
-TwmWindow *UnHighLight_win = NULL;
+static TwmWindow *UnHighLight_win = NULL;
 
 Window DragWindow;		/* variables used in moving windows */
 int origDragX;

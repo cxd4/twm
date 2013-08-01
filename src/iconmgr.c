@@ -43,7 +43,7 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xmu/CharSet.h>
 
 int iconmgr_textx = siconify_width+11;
-WList *Active = NULL;
+static WList *Active = NULL;
 WList *DownIconManager = NULL;
 int iconifybox_width = siconify_width;
 int iconifybox_height = siconify_height;
