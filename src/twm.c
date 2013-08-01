@@ -107,7 +107,7 @@ static Bool PrintErrorMessages = False;	/* controls error messages */
 static int RedirectError;	/* TRUE ==> another window manager running */
 static int TwmErrorHandler ( Display *dpy, XErrorEvent *event );	/* for settting RedirectError */
 static int CatchRedirectError ( Display *dpy, XErrorEvent *event );	/* for everything else */
-static SIGNAL_T sigHandler(int);
+static void sigHandler(int);
 char Info[INFO_LINES][INFO_SIZE];		/* info strings to print */
 int InfoLines;
 static char *InitFile = NULL;
@@ -917,11 +917,10 @@ Reborder (Time time)
     SetFocus ((TwmWindow*)NULL, time);
 }
 
-static SIGNAL_T
+static void
 sigHandler(int sig)
 {
     XtNoticeSignal(si);
-    SIGNAL_RETURN;
 }
 
 /**
