@@ -41,9 +41,6 @@ in this Software without prior written authorization from The Open Group.
 #include "siconify.bm"
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
-#ifdef macII
-int strcmp(); /* missing from string.h in AUX 2.0 */
-#endif
 
 int iconmgr_textx = siconify_width+11;
 WList *Active = NULL;
