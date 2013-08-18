@@ -701,11 +701,7 @@ unique_filename (
     snprintf (tempFile, sizeof(tempFile), "%s/%sXXXXXX", path, prefix);
     tmp = (char *) mktemp (tempFile);
     if (tmp)
-    {
-	char *ptr = malloc (strlen (tmp) + 1);
-	strcpy (ptr, tmp);
-	return (ptr);
-    }
+	return strdup (tmp);
     else
 	return (NULL);
 #endif
@@ -714,12 +710,9 @@ unique_filename (
     char *ptr;
 
     snprintf (tempFile, sizeof(tempFile), "%s/%sXXXXXX", path, prefix);
-    ptr = malloc(strlen(tempFile) + 1);
+    ptr = strdup (tempFile);
     if (ptr != NULL)
-    {
-	strcpy(ptr, tempFile);
-	*pFd =  mkstemp(ptr);
-    }
+	*pFd = mkstemp (ptr);
     return ptr;
 #endif
 }

@@ -652,8 +652,7 @@ button		: BUTTON number		{ $$ = $2;
 					}
 		;
 
-string		: STRING		{ ptr = malloc(strlen($1)+1);
-					  strcpy(ptr, $1);
+string		: STRING		{ ptr = strdup($1);
 					  RemoveDQuote(ptr);
 					  $$ = ptr;
 					}
