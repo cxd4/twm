@@ -745,7 +745,7 @@ AddWindow(Window w, int iconm, IconMgr *iconp)
     if (XGetGeometry(dpy, tmp_win->w, &JunkRoot, &JunkX, &JunkY,
 		     &JunkWidth, &JunkHeight, &JunkBW, &JunkDepth) == 0)
     {
-	free((char *)tmp_win);
+	free(tmp_win);
 	XUngrabServer(dpy);
 	return(NULL);
     }
@@ -1360,7 +1360,7 @@ FetchWmProtocols (TwmWindow *tmp)
 	    if (*ap == _XA_WM_SAVE_YOURSELF) flags |= DoesWmSaveYourself;
 	    if (*ap == _XA_WM_DELETE_WINDOW) flags |= DoesWmDeleteWindow;
 	}
-	if (protocols) XFree ((char *) protocols);
+	if (protocols) XFree (protocols);
     }
     tmp->protocols = flags;
 }
@@ -1372,7 +1372,7 @@ CreateTwmColormap(Colormap c)
     cmap = (TwmColormap *) malloc(sizeof(TwmColormap));
     if (!cmap ||
 	XSaveContext(dpy, c, ColormapContext, (caddr_t) cmap)) {
-	if (cmap) free((char *) cmap);
+	if (cmap) free(cmap);
 	return (NULL);
     }
     cmap->c = c;
@@ -1394,7 +1394,7 @@ CreateColormapWindow(Window w, Bool creating_parent, Bool property_window)
     if (cwin) {
 	if (!XGetWindowAttributes(dpy, w, &attributes) ||
 	    XSaveContext(dpy, w, ColormapContext, (caddr_t) cwin)) {
-	    free((char *) cwin);
+	    free(cwin);
 	    return (NULL);
 	}
 
@@ -1403,7 +1403,7 @@ CreateColormapWindow(Window w, Bool creating_parent, Bool property_window)
 	    cwin->colormap = cmap = CreateTwmColormap(attributes.colormap);
 	    if (!cmap) {
 		XDeleteContext(dpy, w, ColormapContext);
-		free((char *) cwin);
+		free(cwin);
 		return (NULL);
 	    }
 	} else {
@@ -1481,7 +1481,7 @@ FetchWmColormapWindows (TwmWindow *tmp)
 	    for (i = 0; i < number_cmap_windows; i++) {	 /* append rest */
 		new_cmap_windows[i+1] = cmap_windows[i];
 	    }
-	    XFree ((char *) cmap_windows);
+	    XFree (cmap_windows);
 	    can_free_cmap_windows = True;  /* do not use XFree any more */
 	    cmap_windows = new_cmap_windows;
 	    number_cmap_windows++;
@@ -1559,9 +1559,9 @@ FetchWmColormapWindows (TwmWindow *tmp)
   done:
     if (cmap_windows) {
 	if (can_free_cmap_windows)
-	  free ((char *) cmap_windows);
+	  free (cmap_windows);
 	else
-	  XFree ((char *) cmap_windows);
+	  XFree (cmap_windows);
     }
 
     return;

@@ -602,7 +602,7 @@ main(int argc, char *argv[])
 			    }
 			}
 		    }
-		    XFree ((char *) wmhintsp);
+		    XFree (wmhintsp);
 		}
 	    }
 	}

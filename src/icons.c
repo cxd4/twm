@@ -243,7 +243,7 @@ IconDown (TwmWindow *tmp_win)
 	    {
 	    	ip->next = ie->next;
 	    	mergeEntries (ie, ip);
-	    	free ((char *) ie);
+		free (ie);
 		ie = ip;
 	    	ip = prevIconEntry (ip, ir);
 	    } else if (in && in->used == 0 &&
@@ -252,7 +252,7 @@ IconDown (TwmWindow *tmp_win)
 	    {
 	    	ie->next = in->next;
 	    	mergeEntries (in, ie);
-	    	free ((char *) in);
+		free (in);
 	    	in = ie->next;
 	    } else
 		break;
@@ -311,7 +311,7 @@ FreeIconEntries (IconRegion *ir)
     for (ie = ir->entries; ie; ie=tmp)
     {
 	tmp = ie->next;
-	free ((char *) ie);
+	free (ie);
     }
 }
 
@@ -325,7 +325,7 @@ FreeIconRegions(void)
 	tmp = ir;
 	FreeIconEntries (ir);
 	ir = ir->next;
-	free((char *) tmp);
+	free(tmp);
     }
     Scr->FirstRegion = NULL;
     Scr->LastRegion = NULL;

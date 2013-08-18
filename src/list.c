@@ -210,7 +210,7 @@ void FreeList(name_list **list)
     for (nptr = *list; nptr != NULL; )
     {
 	tmp = nptr->next;
-	free((char *) nptr);
+	free(nptr);
 	nptr = tmp;
     }
     *list = NULL;

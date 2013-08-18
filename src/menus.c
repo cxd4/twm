@@ -157,7 +157,7 @@ InitMenus(void)
 	    free(key->name);
 	    tmp = key;
 	    key = key->next;
-	    free((char *) tmp);
+	    free(tmp);
 	}
 	Scr->FuncKeyRoot.next = NULL;
     }
@@ -2777,7 +2777,7 @@ BumpWindowColormap (TwmWindow *tmp, int inc)
 		cwins[j] = tmp->cmaps.cwins[i];
 	    }
 
-	    free((char *) tmp->cmaps.cwins);
+	    free(tmp->cmaps.cwins);
 
 	    tmp->cmaps.cwins = cwins;
 
@@ -2838,7 +2838,7 @@ DestroyMenu (MenuRoot *menu)
     for (item = menu->first; item; ) {
 	MenuItem *tmp = item;
 	item = item->next;
-	free ((char *) tmp);
+	free (tmp);
     }
 }
 

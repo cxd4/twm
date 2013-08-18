@@ -501,9 +501,9 @@ give_up:
 		free (entry->wm_command[i]);
     }
     if (entry->wm_command)
-	free ((char *) entry->wm_command);
+	free (entry->wm_command);
 
-    free ((char *) entry);
+    free (entry);
     *pentry = NULL;
 
     return 0;
@@ -890,7 +890,7 @@ SaveYourselfPhase2CB (SmcConn smcConn, SmPointer clientData)
     props[1] = &prop2;
 
     SmcSetProperties (smcConn, 2, props);
-    free ((char *) prop1.vals);
+    free (prop1.vals);
 
  bad:
     SmcSaveYourselfDone (smcConn, success);

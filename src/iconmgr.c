@@ -534,7 +534,7 @@ void RemoveIconManager(TwmWindow *tmp_win)
     XDeleteContext(dpy, tmp->w, ScreenContext);
     XDestroyWindow(dpy, tmp->w);
     ip->count -= 1;
-    free((char *) tmp);
+    free(tmp);
 
     PackIconManager(ip);
 

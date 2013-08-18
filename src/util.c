@@ -404,7 +404,7 @@ InsertRGBColormap (Atom a, XStandardColormap *maps, int nmaps, Bool replace)
     }
 
     if (replace) {			/* just update contents */
-	if (sc->maps) XFree ((char *) maps);
+	if (sc->maps) XFree (maps);
 	if (sc == Scr->StdCmapInfo.mru) Scr->StdCmapInfo.mru = NULL;
     } else {				/* else appending */
 	sc->next = NULL;
@@ -433,7 +433,7 @@ RemoveRGBColormap (Atom a)
 	prev = sc;
     }
     if (sc) {				/* found one */
-	if (sc->maps) XFree ((char *) sc->maps);
+	if (sc->maps) XFree (sc->maps);
 	if (prev) prev->next = sc->next;
 	if (Scr->StdCmapInfo.head == sc) Scr->StdCmapInfo.head = sc->next;
 	if (Scr->StdCmapInfo.tail == sc) Scr->StdCmapInfo.tail = prev;
@@ -459,7 +459,7 @@ LocateStandardColormaps(void)
 	    InsertRGBColormap (atoms[i], maps, nmaps, False);
 	}
     }
-    if (atoms) XFree ((char *) atoms);
+    if (atoms) XFree (atoms);
     return;
 }
 

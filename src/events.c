@@ -404,7 +404,7 @@ HandleColormapNotify(void)
 	if (cmap->refcnt == 0)
 	{
 	    XDeleteContext(dpy, cmap->c, ColormapContext);
-	    free((char *) cmap);
+	    free(cmap);
 	}
 
 	return;
@@ -714,13 +714,13 @@ free_cwins (TwmWindow *tmp)
 		cmap = tmp->cmaps.cwins[i]->colormap;
 		if (--cmap->refcnt == 0) {
 		    XDeleteContext(dpy, cmap->c, ColormapContext);
-		    free((char *) cmap);
+		    free(cmap);
 		}
 		XDeleteContext(dpy, tmp->cmaps.cwins[i]->w, ColormapContext);
-		free((char *) tmp->cmaps.cwins[i]);
+		free(tmp->cmaps.cwins[i]);
 	    }
 	}
-	free((char *) tmp->cmaps.cwins);
+	free(tmp->cmaps.cwins);
 	if (tmp->cmaps.number_cwins > 1) {
 	    free(tmp->cmaps.scoreboard);
 	    tmp->cmaps.scoreboard = NULL;
@@ -807,7 +807,7 @@ HandlePropertyNotify(void)
 	break;
 
       case XA_WM_HINTS:
-	if (Tmp_win->wmhints) XFree ((char *) Tmp_win->wmhints);
+	if (Tmp_win->wmhints) XFree (Tmp_win->wmhints);
 	Tmp_win->wmhints = XGetWMHints(dpy, Event.xany.window);
 
 	if (Tmp_win->wmhints && (Tmp_win->wmhints->flags & WindowGroupHint))
@@ -1244,20 +1244,20 @@ HandleDestroyNotify(void)
 
     free_window_names (Tmp_win, True, True, True);		/* 1, 2, 3 */
     if (Tmp_win->wmhints)					/* 4 */
-      XFree ((char *)Tmp_win->wmhints);
+      XFree (Tmp_win->wmhints);
     if (Tmp_win->class.res_name && Tmp_win->class.res_name != NoName)  /* 5 */
-      XFree ((char *)Tmp_win->class.res_name);
+      XFree (Tmp_win->class.res_name);
     if (Tmp_win->class.res_class && Tmp_win->class.res_class != NoName) /* 6 */
-      XFree ((char *)Tmp_win->class.res_class);
+      XFree (Tmp_win->class.res_class);
     free_cwins (Tmp_win);				/* 9 */
     if (Tmp_win->titlebuttons)					/* 10 */
-      free ((char *) Tmp_win->titlebuttons);
+      free (Tmp_win->titlebuttons);
     remove_window_from_ring (Tmp_win);				/* 11 */
 
     if (UnHighLight_win == Tmp_win)
 	UnHighLight_win = NULL;
 
-    free((char *)Tmp_win);
+    free(Tmp_win);
 }
 
 
