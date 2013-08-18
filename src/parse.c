@@ -992,13 +992,13 @@ do_var_savecolor(int key)
 {
   Cptr cptrav, cpnew;
   if (!chead) {
-    chead = (Cptr)malloc(sizeof(Cnode));
+    chead = malloc(sizeof(Cnode));
     chead->i = key; chead->next = NULL;
   }
   else {
     cptrav = chead;
     while (cptrav->next != NULL) { cptrav = cptrav->next; }
-    cpnew = (Cptr)malloc(sizeof(Cnode));
+    cpnew = malloc(sizeof(Cnode));
     cpnew->i = key; cpnew->next = NULL; cptrav->next = cpnew;
   }
 }
@@ -1107,7 +1107,7 @@ do_squeeze_entry (name_list **list, char *name, int justify, int num, int denom)
 
     if (HasShape) {
 	SqueezeInfo *sinfo;
-	sinfo = (SqueezeInfo *) malloc (sizeof(SqueezeInfo));
+	sinfo = malloc (sizeof(SqueezeInfo));
 
 	if (!sinfo) {
 	    twmrc_error_prefix();

@@ -262,7 +262,7 @@ ExpandFilename(char *name)
 
     if (name[0] != '~') return name;
 
-    newname = (char *) malloc (HomeLen + strlen(name) + 2);
+    newname = malloc (HomeLen + strlen(name) + 2);
     if (!newname) {
 	fprintf (stderr,
 		 "%s:  unable to allocate %ld bytes to expand filename %s/%s\n",
@@ -354,8 +354,7 @@ FindBitmap (const char *name, unsigned *widthp, unsigned *heightp)
 	/*
 	 * Attempt to find icon in old IconDirectory (now obsolete)
 	 */
-	bigname = (char *) malloc (strlen(name) + strlen(Scr->IconDirectory) +
-				   2);
+	bigname = malloc (strlen(name) + strlen(Scr->IconDirectory) + 2);
 	if (!bigname) {
 	    fprintf (stderr,
 		     "%s:  unable to allocate memory for \"%s/%s\"\n",
@@ -395,7 +394,7 @@ InsertRGBColormap (Atom a, XStandardColormap *maps, int nmaps, Bool replace)
     }
 
     if (!sc) {				/* no existing, allocate new */
-	sc = (StdCmap *) malloc (sizeof (StdCmap));
+	sc = malloc (sizeof (StdCmap));
 	if (!sc) {
 	    fprintf (stderr, "%s:  unable to allocate %ld bytes for StdCmap\n",
 		     ProgramName, (unsigned long)sizeof (StdCmap));
@@ -597,7 +596,7 @@ GetFont(MyFont *font)
 	    XFreeFontSet(dpy, font->fontset);
 	}
 
-	basename2 = (char *)malloc(strlen(font->name) + 3);
+	basename2 = malloc(strlen(font->name) + 3);
 	if (basename2) sprintf(basename2, "%s,*", font->name);
 	else basename2 = font->name;
 	if( (font->fontset = XCreateFontSet(dpy, basename2,

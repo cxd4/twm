@@ -204,7 +204,7 @@ Bool AddFuncKey (char *name, int cont, int mods, int func, char *win_name,
 
     if (tmp == NULL)
     {
-	tmp = (FuncKey *) malloc(sizeof(FuncKey));
+	tmp = malloc(sizeof(FuncKey));
 	tmp->next = Scr->FuncKeyRoot.next;
 	Scr->FuncKeyRoot.next = tmp;
     }
@@ -226,7 +226,7 @@ Bool AddFuncKey (char *name, int cont, int mods, int func, char *win_name,
 int CreateTitleButton (const char *name, int func, const char *action,
                        MenuRoot *menuroot, Bool rightside, Bool append)
 {
-    TitleButton *tb = (TitleButton *) malloc (sizeof(TitleButton));
+    TitleButton *tb = malloc (sizeof(TitleButton));
 
     if (!tb) {
 	fprintf (stderr,
@@ -633,7 +633,7 @@ NewMenuRoot(const char *name)
 
 #define UNUSED_PIXEL ((unsigned long) (~0))	/* more than 24 bits */
 
-    tmp = (MenuRoot *) malloc(sizeof(MenuRoot));
+    tmp = malloc(sizeof(MenuRoot));
     tmp->hi_fore = UNUSED_PIXEL;
     tmp->hi_back = UNUSED_PIXEL;
     tmp->name = name;
@@ -697,7 +697,7 @@ AddToMenu(MenuRoot *menu, const char *item, const char *action,
 	item, action, sub, func);
 #endif
 
-    tmp = (MenuItem *) malloc(sizeof(MenuItem));
+    tmp = malloc(sizeof(MenuItem));
     tmp->root = menu;
 
     if (menu->first == NULL)
@@ -999,8 +999,7 @@ PopUpMenu (MenuRoot *menu, int x, int y, Bool center)
           WindowNameCount++;
         if (WindowNameCount != 0)
         {
-            WindowNames =
-              (TwmWindow **)malloc(sizeof(TwmWindow *)*WindowNameCount);
+            WindowNames = malloc(sizeof(TwmWindow *) * WindowNameCount);
             WindowNames[0] = Scr->TwmRoot.next;
             for(tmp_win = Scr->TwmRoot.next->next , WindowNameCount=1;
                 tmp_win != NULL;
@@ -2758,8 +2757,7 @@ BumpWindowColormap (TwmWindow *tmp, int inc)
     if (!tmp) return;
 
     if (inc && tmp->cmaps.number_cwins > 0) {
-	cwins = (ColormapWindow **) malloc(sizeof(ColormapWindow *)*
-					   tmp->cmaps.number_cwins);
+	cwins = malloc(sizeof(ColormapWindow *) * tmp->cmaps.number_cwins);
 	if (cwins) {
 	    if ((previously_installed =
 		/* SUPPRESS 560 */(Scr->cmapInfo.cmaps == &tmp->cmaps &&

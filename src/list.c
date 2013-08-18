@@ -91,7 +91,7 @@ AddToList(name_list **list_head, char *name, char *ptr)
 
     if (!list_head) return;	/* ignore empty inserts */
 
-    nptr = (name_list *)malloc(sizeof(name_list));
+    nptr = malloc(sizeof(name_list));
     if (nptr == NULL)
     {
 	twmrc_error_prefix();

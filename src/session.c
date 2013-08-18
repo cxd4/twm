@@ -390,8 +390,7 @@ ReadWinConfigEntry (FILE *configFile, unsigned short version,
     unsigned char byte;
     int i;
 
-    *pentry = entry = (TWMWinConfigEntry *) malloc (
-	sizeof (TWMWinConfigEntry));
+    *pentry = entry = malloc (sizeof (TWMWinConfigEntry));
     if (!*pentry)
 	return 0;
 
@@ -427,7 +426,7 @@ ReadWinConfigEntry (FILE *configFile, unsigned short version,
 	    entry->wm_command = NULL;
 	else
 	{
-	    entry->wm_command = (char **) malloc (entry->wm_command_count *
+	    entry->wm_command = malloc (entry->wm_command_count *
 	        sizeof (char *));
 
 	    if (!entry->wm_command)
@@ -703,7 +702,7 @@ unique_filename (
     tmp = (char *) mktemp (tempFile);
     if (tmp)
     {
-	char *ptr = (char *) malloc (strlen (tmp) + 1);
+	char *ptr = malloc (strlen (tmp) + 1);
 	strcpy (ptr, tmp);
 	return (ptr);
     }
@@ -715,7 +714,7 @@ unique_filename (
     char *ptr;
 
     snprintf (tempFile, sizeof(tempFile), "%s/%sXXXXXX", path, prefix);
-    ptr = (char *)malloc(strlen(tempFile) + 1);
+    ptr = malloc(strlen(tempFile) + 1);
     if (ptr != NULL)
     {
 	strcpy(ptr, tempFile);
@@ -839,8 +838,7 @@ SaveYourselfPhase2CB (SmcConn smcConn, SmPointer clientData)
     prop1.name = SmRestartCommand;
     prop1.type = SmLISTofARRAY8;
 
-    prop1.vals = (SmPropValue *) malloc (
-	(Argc + 4) * sizeof (SmPropValue));
+    prop1.vals = malloc ((Argc + 4) * sizeof (SmPropValue));
 
     if (!prop1.vals)
     {

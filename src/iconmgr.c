@@ -133,7 +133,7 @@ IconMgr *AllocateIconManager(char *name, char *icon_name, char *geom, int column
     if (Scr->NoIconManagers)
 	return NULL;
 
-    p = (IconMgr *)malloc(sizeof(IconMgr));
+    p = malloc(sizeof(IconMgr));
     p->name = name;
     p->icon_name = icon_name;
     p->geometry = geom;
@@ -368,7 +368,7 @@ WList *AddIconManager(TwmWindow *tmp_win)
 	    &tmp_win->class)) == NULL)
 	ip = &Scr->iconmgr;
 
-    tmp = (WList *) malloc(sizeof(WList));
+    tmp = malloc(sizeof(WList));
     tmp->iconmgr = ip;
     tmp->next = NULL;
     tmp->active = FALSE;
