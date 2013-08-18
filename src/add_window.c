@@ -171,7 +171,7 @@ AddWindow(Window w, int iconm, IconMgr *iconp)
 
     /* allocate space for the twm window */
     tmp_win = calloc(1, sizeof(TwmWindow));
-    if (tmp_win == 0)
+    if (tmp_win == NULL)
     {
 	fprintf (stderr, "%s: Unable to allocate memory to manage window ID %lx.\n",
 		 ProgramName, w);
