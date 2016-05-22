@@ -1,0 +1,30 @@
+#
+#Here is an Imakefile for twm.  It depends on having TWMDIR defined
+#in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
+#other people do also, so perhaps you could do us all a favor and
+#distribute this one.
+#
+
+       PROGRAMS = twm
+LOCAL_LIBRARIES = $(XLIB)
+      OTHERSRCS = gram.y lex.l
+         YFLAGS = -d
+
+SRCS1=	add_window.c gc.c list.c twm.c parse.c\
+        menus.c events.c resize.c util.c version.c
+
+OBJS1=	gram.o lex.o add_window.o gc.o list.o twm.o parse.o\
+        menus.o events.o resize.o util.o version.o
+
+ComplexProgramTarget_1(twm,$(LOCAL_LIBRARIES),)
+
+InstallNonExec(Sample.twmrc, $(TWMDIR))
+InstallNonExec(xterm.icon, $(TWMDIR))
+
+gram.h gram.c: gram.y
+	yacc -d gram.y
+	mv y.tab.c gram.c
+	mv y.tab.h gram.h
+
+clean::
+	$(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c
