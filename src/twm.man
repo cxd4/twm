@@ -12,7 +12,7 @@
 .if t .sp .5
 ..
 .ta .3i .6i .9i 1.2i 1.5i 1.8i
-.TH TWM 1 "Release 4" "X Version 11"
+.TH TWM 1 "Release 5" "X Version 11"
 .SH NAME
 twm - Tab Window Manager for the X Window System
 .SH SYNTAX
@@ -44,12 +44,12 @@ button unless it has been changed with \fIxmodmap\fP) on a
 titlebutton will invoke the function associated with the button.
 In the default interface, windows are iconified by clicking (pressing
 and then immediately releasing) the left titlebutton (which looks
-like a small X).  Conversely, windows are deiconified by clicking in the
+like a Dot).  Conversely, windows are deiconified by clicking in the
 associated icon or entry in the icon manager
 (see description of the variable
 \fBShowIconManager\fP and of the function \fBf.showiconmgr\fP).
 .PP
-Windows are resized by pressing the right titlebutton (which resembles
+Windows are resized by pressing the right titlebutton (which resembles a
 group of nested squares), dragging the pointer over edge that is to be
 moved, and releasing the pointer when the outline of the window is the desired
 size.  Similarly, windows are moved by pressing in the title or highlight
@@ -99,21 +99,51 @@ Much of \fItwm\fP's appearance and behavior can be controlled by providing
 a startup file in one of the following locations (searched in order for
 each screen being managed when \fItwm\fP begins):
 .TP 8
-.B "$HOME/.twmrc.\fIscreennumber\fP"
-The \fIscreennumber\fP is a small positive number (e.g. 0, 1, etc.)
-representing the screen number (e.g. the last number in the DISPLAY environment
-variable \fIhost:displaynum.screennum\fP) that would be used to contact that 
-screen of the display.  This is intended for displays with multiple screens of 
-differing visual types.
+.B "$HOME/\fI$LANG(full-name)\fP/.twmrc.\fIscreennumber\fP"
+The \fI$LANG(full-name)\fP is the name of the predefined setting for
+locale. If the value of locale is set, Multibyte string can use in the
+startup file. Locale has a expression style as "lang_territory.codeset".
+For example:
+.EX 0
+wr_WR.ct
+ja_JP.ujis
+zh_CN.ugb
+ko_KR.euc
+.EE
+The \fIscreennumber\fP is a small positive number (e.g 0, 1, etc.)
+representing the screen number (e.g. the last number in the DISPLAY
+environments variable \fIhost:displaynum.screennum\fP) that would be
+used to contact that screen of the display.  This is intended for 
+displays with multiple screens of differing visual types.
+.TP 8
+.B "$HOME/$LANG(full-name)/.twmrc"
+.TP 8
+.B "$HOME/\fI$LANG(non-codeset)\fP/.twmrc.screennumber"
+The  \fI$LANG(non-codeset)\fP means a abbreviation of codeset in
+the locale. For example:
+.EX 0
+wr_WR
+ja_JP
+zh_CN
+ko_KR
+.EE
+.TP 8
+.B "$HOME/$LANG(non-codeset)/.twmrc"
+.TP 8
+.B "$HOME/.twmrc.screennumber"
 .TP 8
 .B "$HOME/.twmrc"
 This is the usual name for an individual user's startup file.
 .TP 8
+.B "/usr/lib/X11/$LANG(full-name)/system.twmrc"
+.TP 8
+.B "/usr/lib/X11/$LANG(non-codeset)/twm/system.twmrc"
+.TP 8
 .B "/usr/lib/X11/twm/system.twmrc"
-If neither of the preceding files are found, \fItwm\fP will look in this
-file for a 
-default configuration.  This is often tailored by the site administrator to
-provide convenient menus or familiar bindings for novice users.
+If neither of the preceding files are found, \fItwm\fP will look in 
+one of these three files for a default configuration.
+This is often tailored by the site administrator to provide convenient
+menus or familiar bindings for novice users.
 .PP
 If no startup files are found, \fItwm\fP will use the built-in defaults
 described above.  The only resource used by \fItwm\fP is 
@@ -161,8 +191,8 @@ or
 .EE
 When a variable containing a list of strings representing windows is searched 
 (e.g. to determine whether or not to enable autoraise as shown above), a string
-is considered to match a window if it is a case-sensitive prefix for
-the window's name name (given by the WM_NAME window property), resource name 
+must be an exact, case-sensitive match to
+the window's name (given by the WM_NAME window property), resource name 
 or class name (both given by the WM_CLASS window property).  The preceding
 example would enable autoraise on windows named ``emacs'' as well as any
 \fIxterm\fP (since they are of class ``XTerm'') or xmh windows 
@@ -192,9 +222,9 @@ enabled or disabled on individual windows using the function \fBf.autoraise\fP.
 This variable indicates that dragging out a window size (either when
 initially sizing the window with pointer Button2 or when resizing it) 
 should not wait until the pointer has crossed the window edges.
-Instead, moving
+pInstead, moving
 the pointer automatically causes the nearest edge or edges to move by the
-same amount.  This allows allows the resizing windows that extend off 
+same amount.  This allows the resizing of windows that extend off 
 the edge of the screen.
 If the pointer is
 in the center of the window, or if the resize is begun by pressing a 
@@ -222,13 +252,13 @@ This variable specifies the default background color in the gray pattern
 used in unhighlighted borders (only if \fBNoHighlight\fP hasn't been set),
 and may only be given within a \fBColor\fP or \fBMonochrome\fP list.  The
 optional \fIwincolorlist\fP allows per-window colors to be specified.
-The default  is "black".
+The default  is "white".
 .IP "\fBBorderTileForeground\fP \fIstring\fP [{ \fIwincolorlist\fP }]" 8
 This variable specifies the default foreground color in the gray pattern
 used in unhighlighted borders (only
 if \fBNoHighlight\fP hasn't been set), and may only be given within a 
 \fBColor\fP or \fBMonochrome\fP list.  The optional \fIwincolorlist\fP allows
-per-window colors to be specified.  The default is "white".
+per-window colors to be specified.  The default is "black".
 .IP "\fBBorderWidth\fP \fIpixels\fP" 8
 This variable specifies the width in pixels of the border surrounding
 all client window frames if \fBClientBorderWidth\fP has not been specified.
@@ -376,9 +406,9 @@ icon windows.  The default is 2.
 This variable specifies the directory that should be searched if 
 if a bitmap file cannot be found in any of the directories
 in the \fBbitmapFilePath\fP resource.
-.IP "\fBIconFont\fP \fIstring\fP" 8
+.IP "\fBIconFontSet\fP \fIstring\fP" 8
 This variable specifies the font to be used to display icon names within
-icons.  The default is "8x13".
+icons.  The default is "variable".
 .IP "\fBIconForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color to be used when displaying icons,
 and may only be specified inside of a 
@@ -410,9 +440,9 @@ windows.  If the optional \fIwin-list\fP is given, only those windows will
 not be displayed.  This variable is used to prevent windows that are rarely
 iconified (such as \fIxclock\fP or \fIxload\fP) from taking up space in
 the icon manager.
-.IP "\fBIconManagerFont\fP \fIstring\fP" 8
+.IP "\fBIconManagerFontSet\fP \fIstring\fP" 8
 This variable specifies the font to be used when displaying icon manager
-entries.  The default is "8x13".
+entries.  The default is "variable".
 .IP "\fBIconManagerForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color to be used when displaying
 icon manager entries, and may only be specified inside of a 
@@ -521,9 +551,9 @@ restrict windows to the size of the screen.  The default is "30000x30000".
 This variable specifies the background color used for menus,
 and can only be specified inside of a 
 \fBColor\fP or \fBMonochrome\fP list.  The default is "white".
-.IP "\fBMenuFont\fP \fIstring\fP" 8
+.IP "\fBMenuFontSet\fP \fIstring\fP" 8
 This variable specifies the font to use when displaying menus.  The default
-is "8x13".
+is "variable".
 .IP "\fBMenuForeground\fP \fIstring\fP" 8
 This variable specifies the foreground color used for menus,
 and can only be specified inside of a 
@@ -641,18 +671,40 @@ may be specified:
 .EE
 The default for \fITitleHighlight\fP is to use an even stipple pattern.
 .IP "\fBRandomPlacement\fP" 8
-This variable indicates that windows with no specified geometry should should
+This variable indicates that windows with no specified geometry should 
 be placed in a pseudo-random location instead of having the user drag out
 an outline.
-.IP "\fBResizeFont\fP \fIstring\fP" 8
+.IP "\fBResizeFontSet\fP \fIstring\fP" 8
 This variable specifies the font to be used for in the dimensions window when
 resizing windows.  The default is "fixed".
 .IP "\fBRestartPreviousState\fP" 8
 This variable indicates that 
 \fItwm\fP should attempt to use the WM_STATE property on client windows
 to tell which windows should be iconified and which should be left visible.
-This is typically used to make try to regenerate the state that the screen
+This is typically used to try to regenerate the state that the screen
 was in before the previous window manager was shutdown.
+.IP "\fBSaveColor\fP { \fIcolors-list\fP }" 8
+This variable indicates a list of color assignments to be stored as pixel
+values in the root window property _MIT_PRIORITY_COLORS.  Clients may elect
+to preserve these values when installing their own colormap.  Note that
+use of this mechanism is a way an for application to avoid the "technicolor" 
+problem, whereby useful screen objects such as window borders and titlebars
+disappear when a programs custom colors are installed by the window
+manager.
+For example:
+.EX 0
+\fBSaveColor\fP
+{
+        BorderColor
+        TitleBackground
+        TitleForeground
+        "red"
+        "green"
+        "blue"
+}
+.EE
+This would place on the root window 3 pixel values for borders and titlebars,
+as well as the three color strings, all taken from the default colormap.
 .IP "\fBShowIconManager\fP" 8
 This variable indicates that the icon manager window should be displayed when
 \fItwm\fP is started.  It can always be brought up using the
@@ -709,9 +761,9 @@ This variable specifies the width in pixels of the border surrounding
 titlebuttons.  This is typically set to 0 to allow titlebuttons to take up as
 much space as possible and to not have a border.
 The default is 1.
-.IP "\fBTitleFont\fP \fIstring\fP" 8
+.IP "\fBTitleFontSet\fP \fIstring\fP" 8
 This variable specifies the font to used for displaying window names in
-titlebars.  The default is "8x13".
+titlebars.  The default is "variable".
 .IP "\fBTitleForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color used in titlebars, and
 may only be specified inside of a 
@@ -748,7 +800,7 @@ will only be warped when those windows are deiconified.
 This variable specifies a list of windows along which the \fBf.warpring\fP 
 function cycles.
 .IP "\fBWarpUnmapped\fP" 8
-This variable indicates that that the \fBf.warpto\fP function should deiconify
+This variable indicates that the \fBf.warpto\fP function should deiconify
 any iconified windows it encounters.  This is typically used to make a key
 binding that will pop a particular window (such as \fIxmh\fP), no matter
 where it is.  The default is for \fBf.warpto\fP to ignore iconified windows.
@@ -798,7 +850,7 @@ or
 \fBRightTitleButton\fP "\fIbitmapname\fP"	= \fIfunction\fP
 .EE
 The \fIbitmapname\fP may refer to one of the  built-in bitmaps
-(which are scaled to match \fBTitleFont\fP) by using the appropriate
+(which are scaled to match \fBTitleFontSet\fP) by using the appropriate
 colon-prefixed name described above.
 .PP
 Key and pointer button specifications must give the modifiers that must
@@ -812,7 +864,7 @@ keysym name; buttons are given as the keywords \fBButton1\fP-\fBButton5\fP:
 .EE
 The \fImodlist\fP is any combination of the modifier names \fBshift\fP,
 \fBcontrol\fP, \fBlock\fP, \fBmeta\fP, \fBmod1\fP, \fBmod2\fP, \fBmod3\fP,
-\fBmod4\fP, or \fBmod1\fP (which may be abbreviated as 
+\fBmod4\fP, or \fBmod5\fP (which may be abbreviated as 
 \fBs\fP, \fBc\fP, \fBl\fP, \fBm\fP, \fBm1\fP, \fBm2\fP, \fBm3\fP, \fBm4\fP, 
 \fBm5\fP, respectively) separated by a vertical bar (\(or).
 Similarly, the \fIcontext\fP is any combination of 
@@ -903,7 +955,12 @@ This function raises the bottom-most window that is occluded by another window.
 This function rotates the colormaps (obtained from the WM_COLORMAP_WINDOWS
 property on the window) that \fItwm\fP will display when the pointer
 is in this window.  The argument \fIstring\fP may have one of the following 
-values: \fB"next"\fP, \fB"prev"\fP, and \fB"default"\fP.
+values: \fB"next"\fP, \fB"prev"\fP, and \fB"default"\fP.  It should be noted
+here that in general, the installed colormap is determined by keyboard focus.
+A pointer driven keyboard focus will install a private colormap upon entry
+of the window owning the colormap.  Using the click to type model, private
+colormaps will not be installed until the user presses a mouse button on
+the target window.
 .\"OBSOLETE - should go away and use a clipboard.
 .\".IP "\fBf.cut\fP \fIstring\fP" 8
 .\"This function places the specified \fIstring\fP (followed by a newline
@@ -920,7 +977,9 @@ the client application has requested it through the WM_PROTOCOLS window
 property.  The application is supposed to respond to the message by removing
 the indicated window.  If the window has not requested
 WM_DELETE_WINDOW messages, the keyboard bell will be rung indicating that 
-the user should choose an alternative method.
+the user should choose an alternative method.  Note this is very different
+from f.destroy.  The intent here is to delete a single window,  not 
+necessarily the entire application.
 .IP "\fBf.deltastop\fP" 8
 This function allows a user-defined function to be aborted if the pointer has 
 been moved more than \fIMoveDelta\fP pixels.  See the example definition
@@ -928,7 +987,7 @@ given for \fBFunction "move-or-raise"\fP at the beginning of the section.
 .IP "\fBf.destroy\fP" 8
 This function instructs the X server to close the display connection of the
 client that created the selected window.  This should only be used as a last 
-resort for shutting down runaway clients.  
+resort for shutting down runaway clients.  See also f.delete.
 .IP "\fBf.downiconmgr\fI" 8
 This function warps the pointer to the next row in the current icon manger,
 wrapping to the beginning of the next column if necessary.
@@ -1022,6 +1081,7 @@ This function displays an outline of the selected window.  Crossing a border
 rubber band until the invoking button is released.  To abort a resize,
 press another button before releasing the first button.
 .IP "\fBf.restart\fP" 8
+
 This function kills and restarts \fItwm\fP.
 .IP "\fBf.righticonmgr\fI" 8
 This function is similar to \fBf.nexticonmgr\fP except that wrapping does
@@ -1177,8 +1237,14 @@ they may be lost if they are iconified and no bindings to
 .SH FILES
 .PP
 .nf
+ $HOME/$LANG(full-name)/.twmrc.<screen number>
+ $HOME/$LANG(full-name)/.twmrc
+ $HOME/$LANG(non-codeset)/.twmrc.<screen number>
+ $HOME/$LANG(non-codeset)/.twmrc
  $HOME/.twmrc.<screen number>
  $HOME/.twmrc
+ /usr/lib/X11/$LANG(full-name)/twm/system.twmrc
+ /usr/lib/X11/$LANG(non-codeset)/twm/system.twmrc
  /usr/lib/X11/twm/system.twmrc
 .fi
 .SH "ENVIRONMENT VARIABLES"
@@ -1188,6 +1254,10 @@ during \fBf.exec\fP so that programs come up on the proper screen.
 .IP "HOME" 8
 This variable is used as the prefix for files that begin with a tilde and
 for locating the \fItwm\fP startup file.
+.IP "LANG" 8
+This variable is used for searching the \fItwm\fP startup file. This variable
+means predefined setting for locale, and has a style of
+lang_territory.codeset.
 .SH "SEE ALSO"
 .PP
 X(1), Xserver(1), xdm(1), xrdb(1)
@@ -1198,4 +1268,4 @@ Technology,  See \fIX(1)\fP for a full statement of rights and permissions.
 .SH AUTHORS
 Tom LaStrange, Solbourne Computer; Jim Fulton, MIT X Consortium;
 Steve Pitschke, Stardent Computer; Keith Packard, MIT X Consortium;
-Dave Payne, Apple Computer.
+Dave Sternlicht, MIT X Consortium; Dave Payne, Apple Computer.

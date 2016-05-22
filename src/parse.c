@@ -28,39 +28,38 @@
 
 /***********************************************************************
  *
- * $XConsortium: parse.c,v 1.45 90/03/15 14:23:02 jim Exp $
+ * $XConsortium: parse.c,v 1.52 91/07/12 09:59:37 dave Exp $
  *
  * parse the .twmrc file
  *
- * 17-Nov-87 Thomas E. LaStrange		File created
- *
+ * 17-Nov-87 Thomas E. LaStrange       File created
+ * 10-Oct-90 David M. Sternlicht       Storing saved colors on root
  ***********************************************************************/
-
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[]=
-"$XConsortium: parse.c,v 1.45 90/03/15 14:23:02 jim Exp $";
-#endif
 
 #include <stdio.h>
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
 #include "twm.h"
+#include <X11/wchar.h>
 #include "screen.h"
 #include "menus.h"
 #include "util.h"
 #include "gram.h"
 #include "parse.h"
+#include <X11/Xatom.h> 
+#include <X11/Xlocale.h>
 
-#ifndef SYSTEM_INIT_FILE
-#define SYSTEM_INIT_FILE "/usr/lib/X11/twm/system.twmrc"
-#endif
+#define X11_LIB_DIR "/usr/lib/X11"
+#define TWM_INIT_DIR "/twm/system.twmrc"
+
 #define BUF_LEN 300
 
 static FILE *twmrc;
 static int ptr = 0;
 static int len = 0;
-static char buff[BUF_LEN+1];
-static char overflowbuff[20];		/* really only need one */
+static char buff[BUF_LEN + 1];
+static wchar_t *wcbuff = NULL;
+static wchar_t overflowbuff[20];	/* really only need one */
 static int overflowlen;
 static char **stringListSource, *currentString;
 static int ParseUsePPosition();
@@ -70,10 +69,12 @@ extern int mods;
 
 int ConstrainedMoveTime = 400;		/* milliseconds, event times */
 
-static int twmFileInput(), twmStringListInput();
+static wchar_t twmFileInput();
+static int twmStringListInput();
 void twmUnput();
 int (*twmInputFunc)();
 
+extern wchar_t *convert_mbtowc();
 extern char *defTwmrc[];		/* default bindings */
 
 
@@ -96,7 +97,7 @@ static int doparse (ifunc, srctypename, srcname)
     mods = 0;
     ptr = 0;
     len = 0;
-    yylineno = 1;
+    yylineno = 0;
     ParseError = FALSE;
     twmInputFunc = ifunc;
     overflowlen = 0;
@@ -116,9 +117,10 @@ static int doparse (ifunc, srctypename, srcname)
 int ParseTwmrc (filename)
     char *filename;
 {
-    int i;
+    int i, j;
     char *home = NULL;
-    int homelen = 0;
+    char *locale, tmplocale[64];
+    char *lastdot;
     char *cp = NULL;
     char tmpfilename[257];
 
@@ -126,33 +128,88 @@ int ParseTwmrc (filename)
      * If filename given, try it, else try ~/.twmrc.# then ~/.twmrc.  Then
      * try system.twmrc; finally using built-in defaults.
      */
-    for (twmrc = NULL, i = 0; !twmrc && i < 4; i++) {
+    for (twmrc = NULL, i = 0; !twmrc && i < 10; i++) {
 	switch (i) {
 	  case 0:			/* -f filename */
 	    cp = filename;
 	    break;
 
-	  case 1:			/* ~/.twmrc.screennum */
+	  case 1:			/* ~/LANG(full)/.twmrc.screennum */
 	    if (!filename) {
 		home = getenv ("HOME");
+		locale = setlocale(LC_ALL, NULL);
+		strcpy(tmplocale, locale);
+		if ((lastdot = rindex(tmplocale, '.')) == NULL) {
+		    tmplocale[0] = '\0';
+		} else {
+		    *lastdot = '\0';
+		}
 		if (home) {
-		    homelen = strlen (home);
 		    cp = tmpfilename;
-		    (void) sprintf (tmpfilename, "%s/.twmrc.%d",
-				    home, Scr->screen);
+		    (void) sprintf (tmpfilename, "%s/%s/.twmrc.%d",
+				    home, locale, Scr->screen);
 		    break;
 		}
 	    }
 	    continue;
 
-	  case 2:			/* ~/.twmrc */
+	  case 2:			/* ~/locale(full)/.twmrc */
 	    if (home) {
-		tmpfilename[homelen + 7] = '\0';
+		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
+		    *lastdot = '\0';
+		    break;
+		}
 	    }
+	    continue;
+
+  	  case 3:		/* ~/locale(non_codeset)/.twmrc.screennum */
+	    if (home && tmplocale[0] != '\0') {
+		(void) sprintf (tmpfilename, "%s/%s/.twmrc.%d",
+				home, tmplocale, Scr->screen);
+		break;
+	    }
+	    continue;
+
+  	  case 4:		/* ~/locale(non_codeset)/.twmrc */
+	    if (home && tmplocale[0] != '\0') {
+		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
+		    *lastdot = '\0';
+		    break;
+		}
+	    }
+	    continue;
+
+	  case 5:			/* ~/.twmrc.screennum */
+	    if (home) {
+		(void) sprintf (tmpfilename, "%s/.twmrc.%d",
+				home, Scr->screen);
+		break;
+	    }
+	    continue;
+		
+ 	  case 6:			/* ~/.twmrc */
+	    if (home) {
+		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
+		    *lastdot = '\0';
+		    break;
+		}
+	    }
+	    continue;
+
+	  case 7:		/* X11_LIB_DIR/locale(full)/twm/system.twmrc */
+	    sprintf(tmpfilename, "%s/%s%s",
+		    X11_LIB_DIR, locale, TWM_INIT_DIR);
 	    break;
 
-	  case 3:			/* system.twmrc */
-	    cp = SYSTEM_INIT_FILE;
+	  case 8:	/* X11_LIB_DIR/locale(non_codeset)/twm/system.twmrc */
+	    if (tmplocale[0] != NULL) 
+		sprintf(tmpfilename, "%s/%s%s",
+			X11_LIB_DIR, tmplocale, TWM_INIT_DIR);
+	    break;
+	   
+	  case 9:	/* X11_LIB_DIR/twm/system.twmrc */
+	    sprintf (tmpfilename, "%s%s",
+		     X11_LIB_DIR, TWM_INIT_DIR);
 	    break;
 	}
 
@@ -200,22 +257,25 @@ int ParseStringList (sl)
  ***********************************************************************
  */
 
-static int twmFileInput()
+wchar_t twmFileInput()
 {
-    if (overflowlen) return (int) overflowbuff[--overflowlen];
+    if (overflowlen) return (overflowbuff[--overflowlen]);
 
-    while (ptr == len)
-    {
-	if (fgets(buff, BUF_LEN, twmrc) == NULL)
-	    return NULL;
-
+    while (ptr == len) {
+	if (wcbuff)
+	    free(wcbuff);
+	if (fgets(buff, BUF_LEN, twmrc) == NULL) {
+	    return 0;
+	}
+	wcbuff = convert_mbtowc(buff);
 	yylineno++;
 
 	ptr = 0;
-	len = strlen(buff);
+	len = wcslen(wcbuff); 
     }
-    return ((int)buff[ptr++]);
+    return (wcbuff[ptr++]);
 }
+
 
 static int twmStringListInput()
 {
@@ -247,10 +307,10 @@ static int twmStringListInput()
  */
 
 void twmUnput (c)
-    int c;
+    wchar_t c;
 {
     if (overflowlen < sizeof overflowbuff) {
-	overflowbuff[overflowlen++] = (char) c;
+	overflowbuff[overflowlen++] = c;
     } else {
 	twmrc_error_prefix ();
 	fprintf (stderr, "unable to unput character (%d)\n",
@@ -316,11 +376,11 @@ typedef struct _TwmKeyword {
 #define kw0_WarpUnmapped		25
 
 #define kws_UsePPosition		1
-#define kws_IconFont			2
-#define kws_ResizeFont			3
-#define kws_MenuFont			4
-#define kws_TitleFont			5
-#define kws_IconManagerFont		6
+#define kws_IconFontSet			2
+#define kws_ResizeFontSet		3
+#define kws_MenuFontSet			4
+#define kws_TitleFontSet		5
+#define kws_IconManagerFontSet		6
 #define kws_UnknownIcon			7
 #define kws_IconDirectory		8
 #define kws_MaxWindowSize		9
@@ -460,12 +520,12 @@ static TwmKeyword keytable[] = {
     { "iconbordercolor",	CLKEYWORD, kwcl_IconBorderColor },
     { "iconborderwidth",	NKEYWORD, kwn_IconBorderWidth },
     { "icondirectory",		SKEYWORD, kws_IconDirectory },
-    { "iconfont",		SKEYWORD, kws_IconFont },
+    { "iconfontset",		SKEYWORD, kws_IconFontSet },
     { "iconforeground",		CLKEYWORD, kwcl_IconForeground },
     { "iconifybyunmapping",	ICONIFY_BY_UNMAPPING, 0 },
     { "iconmanagerbackground",	CLKEYWORD, kwcl_IconManagerBackground },
     { "iconmanagerdontshow",	ICONMGR_NOSHOW, 0 },
-    { "iconmanagerfont",	SKEYWORD, kws_IconManagerFont },
+    { "iconmanagerfontset",	SKEYWORD, kws_IconManagerFontSet },
     { "iconmanagerforeground",	CLKEYWORD, kwcl_IconManagerForeground },
     { "iconmanagergeometry",	ICONMGR_GEOMETRY, 0 },
     { "iconmanagerhighlight",	CLKEYWORD, kwcl_IconManagerHighlight },
@@ -484,7 +544,7 @@ static TwmKeyword keytable[] = {
     { "maxwindowsize",		SKEYWORD, kws_MaxWindowSize },
     { "menu",			MENU, 0 },
     { "menubackground",		CKEYWORD, kwc_MenuBackground },
-    { "menufont",		SKEYWORD, kws_MenuFont },
+    { "menufontset",		SKEYWORD, kws_MenuFontSet },
     { "menuforeground",		CKEYWORD, kwc_MenuForeground },
     { "menushadowcolor",	CKEYWORD, kwc_MenuShadowColor },
     { "menutitlebackground",	CKEYWORD, kwc_MenuTitleBackground },
@@ -517,12 +577,13 @@ static TwmKeyword keytable[] = {
     { "r",			ROOT, 0 },
     { "randomplacement",	KEYWORD, kw0_RandomPlacement },
     { "resize",			RESIZE, 0 },
-    { "resizefont",		SKEYWORD, kws_ResizeFont },
+    { "resizefontset",		SKEYWORD, kws_ResizeFontSet },
     { "restartpreviousstate",	KEYWORD, kw0_RestartPreviousState },
     { "right",			JKEYWORD, J_RIGHT },
     { "righttitlebutton",	RIGHT_TITLEBUTTON, 0 },
     { "root",			ROOT, 0 },
     { "s",			SHIFT, 0 },
+    { "savecolor",              SAVECOLOR, 0},
     { "select",			SELECT, 0 },
     { "shift",			SHIFT, 0 },
     { "showiconmanager",	KEYWORD, kw0_ShowIconManager },
@@ -534,7 +595,7 @@ static TwmKeyword keytable[] = {
     { "title",			TITLE, 0 },
     { "titlebackground",	CLKEYWORD, kwcl_TitleBackground },
     { "titlebuttonborderwidth",	NKEYWORD, kwn_TitleButtonBorderWidth },
-    { "titlefont",		SKEYWORD, kws_TitleFont },
+    { "titlefontset",		SKEYWORD, kws_TitleFontSet },
     { "titleforeground",	CLKEYWORD, kwcl_TitleForeground },
     { "titlehighlight",		TITLE_HILITE, 0 },
     { "titlepadding",		NKEYWORD, kwn_TitlePadding },
@@ -711,24 +772,24 @@ int do_string_keyword (keyword, s)
 	    return 1;
 	}
 
-      case kws_IconFont:
-	if (!Scr->HaveFonts) Scr->IconFont.name = s;
+      case kws_IconFontSet:
+	if (!Scr->HaveFonts) Scr->IconFontSet.name = s;
 	return 1;
 
-      case kws_ResizeFont:
-	if (!Scr->HaveFonts) Scr->SizeFont.name = s;
+      case kws_ResizeFontSet:
+	if (!Scr->HaveFonts) Scr->SizeFontSet.name = s;
 	return 1;
 
-      case kws_MenuFont:
-	if (!Scr->HaveFonts) Scr->MenuFont.name = s;
+      case kws_MenuFontSet:
+	if (!Scr->HaveFonts) Scr->MenuFontSet.name = s;
 	return 1;
 
-      case kws_TitleFont:
-	if (!Scr->HaveFonts) Scr->TitleBarFont.name = s;
+      case kws_TitleFontSet:
+	if (!Scr->HaveFonts) Scr->TitleBarFontSet.name = s;
 	return 1;
 
-      case kws_IconManagerFont:
-	if (!Scr->HaveFonts) Scr->IconManagerFont.name = s;
+      case kws_IconManagerFontSet:
+	if (!Scr->HaveFonts) Scr->IconManagerFontSet.name = s;
 	return 1;
 
       case kws_UnknownIcon:
@@ -857,7 +918,6 @@ name_list **do_colorlist_keyword (keyword, colormode, s)
 	GetColor (colormode, &Scr->IconManagerC.back, s);
 	return &Scr->IconManagerBL;
     }
-
     return NULL;
 }
 
@@ -900,6 +960,118 @@ int do_color_keyword (keyword, colormode, s)
     return 0;
 }
 
+/*
+ * put_pixel_on_root() Save a pixel value in twm root window color property.
+ */
+put_pixel_on_root(pixel)                                 
+    Pixel pixel;                                         
+{                                                        
+  int           i, addPixel = 1;
+  Atom          pixelAtom, retAtom;	                 
+  int           retFormat;
+  unsigned long nPixels, retAfter;                     
+  Pixel        *retProp;
+  XTextProperty text_prop;
+
+  pixelAtom = XInternAtom(dpy, "_MIT_PRIORITY_COLORS", True);        
+  XGetWindowProperty(dpy, Scr->Root, pixelAtom, 0, 8192,
+                     False, XA_CARDINAL, &retAtom,
+                     &retFormat, &nPixels, &retAfter,
+                     (unsigned char **)&retProp);
+
+  for (i = 0; i < nPixels; i++)
+      if (pixel == retProp[i]) addPixel = 0;
+
+  if (addPixel)
+      XChangeProperty (dpy, Scr->Root, _XA_MIT_PRIORITY_COLORS,
+		       XA_CARDINAL, 32, PropModeAppend,
+		       (unsigned char *)&pixel, 1);
+}                                                        
+
+/*
+ * do_string_savecolor() save a color from a string in the twmrc file.
+ */
+int do_string_savecolor(colormode, s)
+     int colormode;
+     char *s;
+{
+  Pixel p;
+  GetColor(colormode, &p, s);
+  put_pixel_on_root(p);
+}
+
+/*
+ * do_var_savecolor() save a color from a var in the twmrc file.
+ */
+typedef struct _cnode {int i; struct _cnode *next;} Cnode, *Cptr;
+Cptr chead = NULL;
+
+int do_var_savecolor(key)
+int key;
+{
+  Cptr cptrav, cpnew;
+  if (!chead) {
+    chead = (Cptr)malloc(sizeof(Cnode));
+    chead->i = key; chead->next = NULL;
+  }
+  else {
+    cptrav = chead;
+    while (cptrav->next != NULL) { cptrav = cptrav->next; }
+    cpnew = (Cptr)malloc(sizeof(Cnode));
+    cpnew->i = key; cpnew->next = NULL; cptrav->next = cpnew;
+  }
+}
+
+/*
+ * assign_var_savecolor() traverse the var save color list placeing the pixels
+ *                        in the root window property.
+ */
+void assign_var_savecolor()
+{
+  Cptr cp = chead;
+  while (cp != NULL) {
+    switch (cp->i) {
+    case kwcl_BorderColor:
+      put_pixel_on_root(Scr->BorderColor);
+      break;
+    case kwcl_IconManagerHighlight:
+      put_pixel_on_root(Scr->IconManagerHighlight);
+      break;
+    case kwcl_BorderTileForeground:
+      put_pixel_on_root(Scr->BorderTileC.fore);
+      break;
+    case kwcl_BorderTileBackground:
+      put_pixel_on_root(Scr->BorderTileC.back);
+      break;
+    case kwcl_TitleForeground:
+      put_pixel_on_root(Scr->TitleC.fore);
+      break;
+    case kwcl_TitleBackground:
+      put_pixel_on_root(Scr->TitleC.back);
+      break;
+    case kwcl_IconForeground:
+      put_pixel_on_root(Scr->IconC.fore);
+      break;
+    case kwcl_IconBackground:
+      put_pixel_on_root(Scr->IconC.back);
+      break;
+    case kwcl_IconBorderColor:
+      put_pixel_on_root(Scr->IconBorderColor);
+      break;
+    case kwcl_IconManagerForeground:
+      put_pixel_on_root(Scr->IconManagerC.fore);
+      break;
+    case kwcl_IconManagerBackground:
+      put_pixel_on_root(Scr->IconManagerC.back);
+      break;
+    }
+    cp = cp->next;
+  }
+  if (chead) {
+    free(chead);
+    chead = NULL;
+  }
+}
 
 static int ParseUsePPosition (s)
     register char *s;
@@ -947,7 +1119,6 @@ do_squeeze_entry (list, name, justify, num, denom)
 	denom = 0;
     }
 
-#ifdef SHAPE
     if (HasShape) {
 	SqueezeInfo *sinfo;
 	sinfo = (SqueezeInfo *) malloc (sizeof(SqueezeInfo));
@@ -963,5 +1134,4 @@ do_squeeze_entry (list, name, justify, num, denom)
 	sinfo->denom = denom;
 	AddToList (list, name, (char *) sinfo);
     }
-#endif
 }

@@ -21,7 +21,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: iconmgr.c,v 1.43 90/03/20 11:20:17 jim Exp $
+ * $XConsortium: iconmgr.c,v 1.47 91/07/12 09:59:42 dave Exp $
  *
  * Icon Manager routines
  *
@@ -39,8 +39,9 @@
 #include "siconify.bm"
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
-
-int strcmp();
+#ifdef macII
+int strcmp(); /* missing from string.h in AUX 2.0 */
+#endif
 
 int iconmgr_textx = siconify_width+11;
 WList *Active = NULL;
@@ -75,10 +76,10 @@ void CreateIconManagers()
     if (Scr->NoIconManagers)
 	return;
 
-    if (Scr->siconifyPm == NULL)
+    if (Scr->siconifyPm == None)
     {
 	Scr->siconifyPm = XCreatePixmapFromBitmapData(dpy, Scr->Root,
-	    siconify_bits, siconify_width, siconify_height, 1, 0, 1);
+	    (char *)siconify_bits, siconify_width, siconify_height, 1, 0, 1);
     }
 
     for (p = &Scr->iconmgr; p != NULL; p = p->next)
@@ -104,20 +105,22 @@ void CreateIconManagers()
 
 	sprintf(str, "%s Icon Manager", p->name);
 	sprintf(str1, "%s Icons", p->name);
+
 	if (p->icon_name)
 	    icon_name = p->icon_name;
 	else
 	    icon_name = str1;
 
-	XSetStandardProperties(dpy, p->w, str, icon_name, None, NULL, 0, NULL);
-
+	XmbSetWMProperties(dpy, p->w, str, icon_name, NULL, 0, NULL,
+			   NULL, NULL);
+	
 	p->twm_win = AddWindow(p->w, TRUE, p);
 	SetMapStateProp (p->twm_win, WithdrawnState);
     }
     for (p = &Scr->iconmgr; p != NULL; p = p->next)
     {
-	GrabButtons(p->twm_win);
-	GrabKeys(p->twm_win);
+ 	GrabButtons(p->twm_win);
+ 	GrabKeys(p->twm_win); 
     }
 }
 
@@ -137,8 +140,8 @@ void CreateIconManagers()
 
 IconMgr *AllocateIconManager(name, icon_name, geom, columns)
     char *name;
-    char *geom;
     char *icon_name;
+    char *geom;
     int columns;
 {
     IconMgr *p;
@@ -286,6 +289,9 @@ void MoveIconManager(dir)
 	return;
     }
 
+    if (tmp == NULL)
+	return;
+
     /* raise the frame so the icon manager is visible */
     if (ip->twm_win->mapped) {
 	XRaiseWindow(dpy, ip->twm_win->frame);
@@ -430,7 +436,7 @@ WList *AddIconManager(tmp_win)
     GetColorFromList(Scr->IconManagerHighlightL, tmp_win->full_name,
 	&tmp_win->class, &tmp->highlight);
 
-    h = Scr->IconManagerFont.height + 10;
+    h = Scr->IconManagerFontSet.height + 10;
     if (h < (siconify_height + 4))
 	h = siconify_height + 4;
 
@@ -703,7 +709,7 @@ void PackIconManager(ip)
     int savewidth;
     WList *tmp;
 
-    wheight = Scr->IconManagerFont.height + 10;
+    wheight = Scr->IconManagerFontSet.height + 10;
     if (wheight < (siconify_height + 4))
 	wheight = siconify_height + 4;
 

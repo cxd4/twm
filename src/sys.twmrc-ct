@@ -13,11 +13,11 @@
 NoGrabServer
 RestartPreviousState
 DecorateTransients
-TitleFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-ResizeFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-MenuFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-IconFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
-IconManagerFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
+TitleFontSet "-*--18-*"
+ResizeFontSet "-*--14-*"
+MenuFontSet "-*--18-*"
+IconFontSet "-*--14-*"
+IconManagerFontSet "-*--14-*"
 #ClientBorderWidth
 
 Color
@@ -69,21 +69,21 @@ Button2 = : iconmgr : f.iconify
 #
 menu "defops"
 {
-"Twm"	f.title
-"Iconify"	f.iconify
-"Resize"	f.resize
-"Move"		f.move
-"Raise"		f.raise
-"Lower"		f.lower
-""		f.nop
-"Focus"		f.focus
-"Unfocus"	f.unfocus
-"Show Iconmgr"	f.showiconmgr
-"Hide Iconmgr"	f.hideiconmgr
-""		f.nop
-"Kill"		f.destroy
-"Delete"	f.delete
-""		f.nop
-"Restart"	f.restart
-"Exit"		f.quit
+"$(B#T#W#M(B"	f.title
+"$(B%"%$%3%s(B"	f.iconify
+"$(B%5%$%:JQ99(B"	f.resize
+"$(B0\F0(B"		f.move
+"$(B:F>e0L(B"	f.raise
+"$(B:F2<0L(B"	f.lower
+""			f.nop
+"$(B%U%)!<%+%9@_Dj(B"f.focus
+"$(B%U%)!<%+%92r=|(B"f.unfocus
+"Iconmgr$(BI=<((B"	f.showiconmgr
+"Iconmgr$(BHsI=<((B"f.hideiconmgr
+""			f.nop
+"$(BGK2u(B"		f.destroy
+"$(B:o=|(B"		f.delete
+""			f.nop
+"$(B#T#W#M:F5/F0(B"	f.restart
+"$(B=*N;(B"		f.quit
 }

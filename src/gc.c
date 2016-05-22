@@ -28,18 +28,13 @@
 
 /**********************************************************************
  *
- * $XConsortium: gc.c,v 1.21 90/03/13 15:28:56 jim Exp $
+ * $XConsortium: gc.c,v 1.22 91/01/09 17:13:12 rws Exp $
  *
  * Open the fonts and create the GCs
  *
  * 31-Mar-88 Tom LaStrange        Initial Version.
  *
  **********************************************************************/
-
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[]=
-"$XConsortium: gc.c,v 1.21 90/03/13 15:28:56 jim Exp $";
-#endif
 
 #include <stdio.h>
 #include "twm.h"
@@ -80,7 +75,7 @@ CreateGCs()
     gcm = 0;
     gcm |= GCForeground;    gcv.foreground = Scr->MenuC.fore;
     gcm |= GCBackground;    gcv.background = Scr->MenuC.back;
-    gcm |= GCFont;	    gcv.font =  Scr->MenuFont.font->fid;
+    gcm |= GCFont;	    gcv.font =  Scr->MenuFontSet.font->fid;
 
     Scr->MenuGC = XCreateGC(dpy, Scr->Root, gcm, &gcv);
 

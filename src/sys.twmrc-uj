@@ -13,11 +13,11 @@
 NoGrabServer
 RestartPreviousState
 DecorateTransients
-TitleFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-ResizeFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-MenuFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-IconFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
-IconManagerFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
+TitleFontSet "-*--18-*"
+ResizeFontSet "-*--14-*"
+MenuFontSet "-*--18-*"
+IconFontSet "-*--14-*"
+IconManagerFontSet "-*--14-*"
 #ClientBorderWidth
 
 Color
@@ -69,21 +69,21 @@ Button2 = : iconmgr : f.iconify
 #
 menu "defops"
 {
-"Twm"	f.title
-"Iconify"	f.iconify
-"Resize"	f.resize
-"Move"		f.move
-"Raise"		f.raise
-"Lower"		f.lower
+"ＴＷＭ"	f.title
+"アイコン"	f.iconify
+"サイズ変更"	f.resize
+"移動"		f.move
+"再上位"	f.raise
+"再下位"	f.lower
 ""		f.nop
-"Focus"		f.focus
-"Unfocus"	f.unfocus
-"Show Iconmgr"	f.showiconmgr
-"Hide Iconmgr"	f.hideiconmgr
+"フォーカス設定"f.focus
+"フォーカス解除"f.unfocus
+"Iconmgr表示"	f.showiconmgr
+"Iconmgr非表示"	f.hideiconmgr
 ""		f.nop
-"Kill"		f.destroy
-"Delete"	f.delete
+"破壊"		f.destroy
+"削除"		f.delete
 ""		f.nop
-"Restart"	f.restart
-"Exit"		f.quit
+"ＴＷＭ再起動"	f.restart
+"終了"		f.quit
 }

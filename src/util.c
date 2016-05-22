@@ -28,7 +28,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: util.c,v 1.39 90/03/16 12:06:46 jim Exp $
+ * $XConsortium: util.c,v 1.47 91/07/14 13:40:37 rws Exp $
  *
  * utility routines for twm
  *
@@ -36,23 +36,20 @@
  *
  ***********************************************************************/
 
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[]=
-"$XConsortium: util.c,v 1.39 90/03/16 12:06:46 jim Exp $";
-#endif
-
-#include <stdio.h>
 #include "twm.h"
+#include <X11/wchar.h>
 #include "util.h"
 #include "gram.h"
 #include "screen.h"
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
+#include <stdio.h>
 #include <X11/Xmu/Drawing.h>
 #include <X11/Xmu/CharSet.h>
 
 static Pixmap CreateXLogoPixmap(), CreateResizePixmap();
 static Pixmap CreateQuestionPixmap(), CreateMenuPixmap();
+static Pixmap CreateDotPixmap();
 int HotX, HotY;
 
 /***********************************************************************
@@ -333,11 +330,13 @@ Pixmap FindBitmap (name, widthp, heightp)
 	    char *name;
 	    Pixmap (*proc)();
 	} pmtab[] = {
-	    { TBPM_XLOGO,	CreateXLogoPixmap },
-	    { TBPM_ICONIFY,	CreateXLogoPixmap },
+	    { TBPM_DOT,		CreateDotPixmap },
+	    { TBPM_ICONIFY,	CreateDotPixmap },
 	    { TBPM_RESIZE,	CreateResizePixmap },
+	    { TBPM_XLOGO,	CreateXLogoPixmap },
+	    { TBPM_DELETE,	CreateXLogoPixmap },
+	    { TBPM_MENU,	CreateMenuPixmap },
 	    { TBPM_QUESTION,	CreateQuestionPixmap },
-	    { TBPM_MENU,	CreateMenuPixmap },  /* XXX - don't doc, niy */
 	};
 	
 	for (i = 0; i < (sizeof pmtab)/(sizeof pmtab[0]); i++) {
@@ -360,8 +359,8 @@ Pixmap FindBitmap (name, widthp, heightp)
     /*
      * look along bitmapFilePath resource same as toolkit clients
      */
-    pm = XmuLocateBitmapFile (ScreenOfDisplay(dpy, Scr->screen), bigname,
-			      NULL, 0, widthp, heightp, &HotX, &HotY);
+    pm = XmuLocateBitmapFile (ScreenOfDisplay(dpy, Scr->screen), bigname, NULL,
+			      0, (int *)widthp, (int *)heightp, &HotX, &HotY);
     if (pm == None && Scr->IconDirectory && bigname[0] != '/') {
 	if (bigname != name) free (bigname);
 	/*
@@ -496,13 +495,7 @@ char *name;
     if (Scr->Monochrome != kind)
 	return;
 
-    /*
-     * small hack to avoid extra roundtrip for color allocation
-     */
-    if (!((name[0] == '#')
-	  ? ((stat = XParseColor (dpy, cmap, name, &color)) &&
-	     XAllocColor (dpy, cmap, &color))
-	  : XAllocNamedColor (dpy, cmap, name, &color, &junkcolor)))
+    if (!XAllocNamedColor (dpy, cmap, name, &color, &junkcolor))
     {
 	/* if we could not allocate the color, let's see if this is a
 	 * standard colormap
@@ -546,13 +539,13 @@ char *name;
       gotit:
 	if (stdcmap) {
             color.pixel = (stdcmap->base_pixel +
-			   ((Pixel)((color.red / 65535.0) *
+			   ((Pixel)(((float)color.red / 65535.0) *
 				    stdcmap->red_max + 0.5) *
 			    stdcmap->red_mult) +
-			   ((Pixel)((color.green /65535.0) *
+			   ((Pixel)(((float)color.green /65535.0) *
 				    stdcmap->green_max + 0.5) *
 			    stdcmap->green_mult) +
-			   ((Pixel)((color.blue  / 65535.0) *
+			   ((Pixel)(((float)color.blue  / 65535.0) *
 				    stdcmap->blue_max + 0.5) *
 			    stdcmap->blue_mult));
         } else {
@@ -566,28 +559,51 @@ char *name;
 }
 
 GetFont(font)
-MyFont *font;
+MyFontSet *font;
 {
-    char *deffontname = "fixed";
-
     if (font->font != NULL)
 	XFreeFont(dpy, font->font);
 
-    if ((font->font = XLoadQueryFont(dpy, font->name)) == NULL)
-    {
-	if (Scr->DefaultFont.name) {
-	    deffontname = Scr->DefaultFont.name;
+    GetFontSet(font);
+    if (font->font == NULL) {
+	fprintf (stderr, "%s:  unable to open font list \"%s\"\n",
+		 ProgramName, font->name);
+	if (Scr->DefaultFontSet.name) {
+	    font->name = Scr->DefaultFontSet.name;
+	    GetFontSet(font);
+	    if (font->font == NULL) {
+		fprintf (stderr, "%s:  unable to open font list \"%s\"\n",
+			 ProgramName, font->name);
+		exit(1);
+	    }
 	}
-	if ((font->font = XLoadQueryFont(dpy, deffontname)) == NULL)
-	{
-	    fprintf (stderr, "%s:  unable to open fonts \"%s\" or \"%s\"\n",
-		     ProgramName, font->name, deffontname);
-	    exit(1);
-	}
-
     }
     font->height = font->font->ascent + font->font->descent;
     font->y = font->font->ascent;
+}
+
+GetFontSet(font)
+MyFontSet *font;
+{
+    char	**missing_charset_list, *def_string;
+    int		missing_charset_count;
+    char	**dummy;
+    XFontStruct **fs_list;
+
+    font->fontset = XCreateFontSet(dpy, font->name,
+                        &missing_charset_list, &missing_charset_count,
+			&def_string);
+    if(missing_charset_count) {
+	int i;
+	for (i = 0; i < missing_charset_count; i++) {
+	    fprintf(stderr,
+		    "%s : unable to open font \"%s\".... \n",
+		    ProgramName, missing_charset_list[i]);
+	}
+	XFreeStringList(missing_charset_list);
+    }
+    XFontsOfFontSet(font->fontset, &fs_list, &dummy);
+    font->font = fs_list[0];
 }
 
 
@@ -595,8 +611,9 @@ MyFont *font;
  * SetFocus - separate routine to set focus to make things more understandable
  * and easier to debug
  */
-SetFocus (tmp_win)
+SetFocus (tmp_win, time)
     TwmWindow *tmp_win;
+    Time	time;
 {
     Window w = (tmp_win ? tmp_win->w : PointerRoot);
 
@@ -609,7 +626,7 @@ SetFocus (tmp_win)
     }
 #endif
 
-    XSetInputFocus (dpy, w, RevertToPointerRoot, CurrentTime);
+    XSetInputFocus (dpy, w, RevertToPointerRoot, time);
 }
 
 
@@ -626,7 +643,6 @@ int
 putenv(s)
     char *s;
 {
-    extern char *index();
     char *v;
     int varlen, idx;
     extern char **environ;
@@ -719,13 +735,14 @@ static Pixmap CreateResizePixmap (widthp, heightp)
     unsigned int *widthp, *heightp;
 {
     int h = Scr->TBInfo.width - Scr->TBInfo.border * 2;
-    if (h < 0) h = 0;
+    if (h < 1) h = 1;
 
     *widthp = *heightp = (unsigned int) h;
     if (Scr->tbpm.resize == None) {
-	XSegment segs[4];
+	XPoint	points[3];
 	GC gc;
 	int w;
+	int lw;
 
 	/*
 	 * create the pixmap
@@ -735,17 +752,30 @@ static Pixmap CreateResizePixmap (widthp, heightp)
 	XSetForeground (dpy, gc, 0);
 	XFillRectangle (dpy, Scr->tbpm.resize, gc, 0, 0, h, h);
 	XSetForeground (dpy, gc, 1);
+	lw = h / 16;
+	if (lw == 1)
+	    lw = 0;
+	XSetLineAttributes (dpy, gc, lw, LineSolid, CapButt, JoinMiter);
 
 	/*
 	 * draw the resize button, 
 	 */
 	w = (h * 2) / 3;
-	segs[0].x1 = w; segs[0].y1 = 0; segs[0].x2 = w; segs[0].y2 = w;
-	segs[1].x1 = 0; segs[1].y1 = w; segs[1].x2 = w; segs[1].y2 = w;
+	points[0].x = w;
+	points[0].y = 0;
+	points[1].x = w;
+	points[1].y = w;
+	points[2].x = 0;
+	points[2].y = w;
+	XDrawLines (dpy, Scr->tbpm.resize, gc, points, 3, CoordModeOrigin);
 	w = w / 2;
-	segs[2].x1 = w; segs[2].y1 = 0; segs[2].x2 = w; segs[2].y2 = w;
-	segs[3].x1 = 0; segs[3].y1 = w; segs[3].x2 = w; segs[3].y2 = w;
-	XDrawSegments (dpy, Scr->tbpm.resize, gc, segs, 4);
+	points[0].x = w;
+	points[0].y = 0;
+	points[1].x = w;
+	points[1].y = w;
+	points[2].x = 0;
+	points[2].y = w;
+	XDrawLines (dpy, Scr->tbpm.resize, gc, points, 3, CoordModeOrigin);
 
 	/*
 	 * done drawing
@@ -755,6 +785,32 @@ static Pixmap CreateResizePixmap (widthp, heightp)
     return Scr->tbpm.resize;
 }
 
+
+static Pixmap CreateDotPixmap (widthp, heightp)
+    unsigned int *widthp, *heightp;
+{
+    int h = Scr->TBInfo.width - Scr->TBInfo.border * 2;
+
+    h = h * 3 / 4;
+    if (h < 1) h = 1;
+    if (!(h & 1))
+	h--;
+    *widthp = *heightp = (unsigned int) h;
+    if (Scr->tbpm.delete == None) {
+	GC  gc;
+	Pixmap pix;
+
+	pix = Scr->tbpm.delete = XCreatePixmap (dpy, Scr->Root, h, h, 1);
+	gc = XCreateGC (dpy, pix, 0L, NULL);
+	XSetLineAttributes (dpy, gc, h, LineSolid, CapRound, JoinRound);
+	XSetForeground (dpy, gc, 0L);
+	XFillRectangle (dpy, pix, gc, 0, 0, h, h);
+	XSetForeground (dpy, gc, 1L);
+	XDrawLine (dpy, pix, gc, h/2, h/2, h/2, h/2);
+	XFreeGC (dpy, gc);
+    }
+    return Scr->tbpm.delete;
+}
 
 #define questionmark_width 8
 #define questionmark_height 8
@@ -779,11 +835,83 @@ static Pixmap CreateQuestionPixmap (widthp, heightp)
 }
 
 
-/* ARGSUSED */
 static Pixmap CreateMenuPixmap (widthp, heightp)
     int *widthp, *heightp;
 {
-    fprintf (stderr, "%s:  built-in bitmap \"%s\" not implemented.\n",
-	     ProgramName, TBPM_MENU);
-    return None;
+    CreateMenuIcon (Scr->TBInfo.width - Scr->TBInfo.border * 2,widthp,heightp);
+}
+
+Pixmap CreateMenuIcon (height, widthp, heightp)
+    int	height;
+    int	*widthp, *heightp;
+{
+    int h, w;
+    int ih, iw;
+    int	ix, iy;
+    int	mh, mw;
+    int	tw, th;
+    int	lw, lh;
+    int	lx, ly;
+    int	lines, dly;
+    int off;
+    int	bw;
+
+    h = height;
+    w = h * 7 / 8;
+    if (h < 1)
+	h = 1;
+    if (w < 1)
+	w = 1;
+    *widthp = w;
+    *heightp = h;
+    if (Scr->tbpm.menu == None) {
+	Pixmap  pix;
+	GC	gc;
+
+	pix = Scr->tbpm.menu = XCreatePixmap (dpy, Scr->Root, w, h, 1);
+	gc = XCreateGC (dpy, pix, 0L, NULL);
+	XSetForeground (dpy, gc, 0L);
+	XFillRectangle (dpy, pix, gc, 0, 0, w, h);
+	XSetForeground (dpy, gc, 1L);
+	ix = 1;
+	iy = 1;
+	ih = h - iy * 2;
+	iw = w - ix * 2;
+	off = ih / 8;
+	mh = ih - off;
+	mw = iw - off;
+	bw = mh / 16;
+	if (bw == 0 && mw > 2)
+	    bw = 1;
+	tw = mw - bw * 2;
+	th = mh - bw * 2;
+	XFillRectangle (dpy, pix, gc, ix, iy, mw, mh);
+	XFillRectangle (dpy, pix, gc, ix + iw - mw, iy + ih - mh, mw, mh);
+	XSetForeground (dpy, gc, 0L);
+	XFillRectangle (dpy, pix, gc, ix+bw, iy+bw, tw, th);
+	XSetForeground (dpy, gc, 1L);
+	lw = tw / 2;
+	if ((tw & 1) ^ (lw & 1))
+	    lw++;
+	lx = ix + bw + (tw - lw) / 2;
+
+	lh = th / 2 - bw;
+	if ((lh & 1) ^ ((th - bw) & 1))
+	    lh++;
+	ly = iy + bw + (th - bw - lh) / 2;
+
+	lines = 3;
+	if ((lh & 1) && lh < 6)
+	{
+	    lines--;
+	}
+	dly = lh / (lines - 1);
+	while (lines--)
+	{
+	    XFillRectangle (dpy, pix, gc, lx, ly, lw, bw);
+	    ly += dly;
+	}
+	XFreeGC (dpy, gc);
+    }
+    return Scr->tbpm.menu;
 }

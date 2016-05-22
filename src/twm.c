@@ -28,23 +28,19 @@
 
 /***********************************************************************
  *
- * $XConsortium: twm.c,v 1.111 90/03/23 13:23:34 jim Exp $
+ * $XConsortium: twm.c,v 1.124 91/05/08 11:01:54 dave Exp $
  *
  * twm - "Tom's Window Manager"
  *
  * 27-Oct-87 Thomas E. LaStrange	File created
- *
+ * 10-Oct-90 David M. Sternlicht        Storing saved colors on root
  ***********************************************************************/
-
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[] =
-"$XConsortium: twm.c,v 1.111 90/03/23 13:23:34 jim Exp $";
-#endif
 
 #include <stdio.h>
 #include <signal.h>
 #include <fcntl.h>
 #include "twm.h"
+#include <X11/wchar.h>
 #include "add_window.h"
 #include "gc.h"
 #include "parse.h"
@@ -56,16 +52,16 @@ static char RCSinfo[] =
 #include "screen.h"
 #include "iconmgr.h"
 #include <X11/Xproto.h>
+#include <X11/Xatom.h>
+#include <X11/Xlocale.h>
 
 Display *dpy;			/* which display are we talking to */
 Window ResizeWindow;		/* the window we are resizing */
 
 int MultiScreen = TRUE;		/* try for more than one screen? */
 int NumScreens;			/* number of screens in ScreenList */
-#ifdef SHAPE
 int HasShape;			/* server supports shape extension? */
 int ShapeEventBase, ShapeErrorBase;
-#endif
 ScreenInfo **ScreenList;	/* structures for each screen */
 ScreenInfo *Scr = NULL;		/* the cur and prev screens */
 int PreviousScreen;		/* last screen that we were on */
@@ -114,6 +110,12 @@ Bool RestartPreviousState = False;	/* try to restart in previous state */
 
 unsigned long black, white;
 
+extern void assign_var_savecolor();
+extern wchar_t *convert_mbtowc();
+
+XRectangle overall_ink_return;
+XRectangle overall_logical_return;
+
 /***********************************************************************
  *
  *  Procedure:
@@ -133,7 +135,6 @@ main(argc, argv, environ)
     char *display_name = NULL;
     unsigned long valuemask;	/* mask for create windows */
     XSetWindowAttributes attributes;	/* attributes for create windows */
-    SigProc old_handler;
     int numManaged, firstscrn, lastscrn, scrnum;
     extern ColormapWindow *CreateColormapWindow();
 
@@ -142,6 +143,8 @@ main(argc, argv, environ)
     Argv = argv;
     Environ = environ;
 
+    setlocale(LC_ALL,""); 
+    XSetLocaleModifiers("");
     for (i = 1; i < argc; i++) {
 	if (argv[i][0] == '-') {
 	    switch (argv[i][1]) {
@@ -171,16 +174,15 @@ main(argc, argv, environ)
 	exit (1);
     }
 
-    old_handler = signal(SIGINT, SIG_IGN);
-    if (old_handler != SIG_IGN)
-	signal(SIGINT, Done);
+#define newhandler(sig) \
+    if (signal (sig, SIG_IGN) != SIG_IGN) (void) signal (sig, Done)
 
-    old_handler = signal(SIGHUP, SIG_IGN);
-    if (old_handler != SIG_IGN)
-	signal(SIGHUP, Done);
+    newhandler (SIGINT);
+    newhandler (SIGHUP);
+    newhandler (SIGQUIT);
+    newhandler (SIGTERM);
 
-    signal(SIGQUIT, Done);
-    signal(SIGTERM, Done);
+#undef newhandler
 
     Home = getenv("HOME");
     if (Home == NULL)
@@ -204,9 +206,7 @@ main(argc, argv, environ)
 	exit (1);
     }
 
-#ifdef SHAPE
     HasShape = XShapeQueryExtension (dpy, &ShapeEventBase, &ShapeErrorBase);
-#endif
     TwmContext = XUniqueContext();
     MenuContext = XUniqueContext();
     IconManagerContext = XUniqueContext();
@@ -234,11 +234,20 @@ main(argc, argv, environ)
 
     /* for simplicity, always allocate NumScreens ScreenInfo struct pointers */
     ScreenList = (ScreenInfo **) calloc (NumScreens, sizeof (ScreenInfo *));
+    if (ScreenList == NULL)
+    {
+	fprintf (stderr, "%s: Unable to allocate memory for screen list, exiting.\n",
+		 ProgramName);
+	exit (1);
+    }
     numManaged = 0;
     PreviousScreen = DefaultScreen(dpy);
     FirstScreen = TRUE;
     for (scrnum = firstscrn ; scrnum <= lastscrn; scrnum++)
     {
+        /* Make sure property priority colors is empty */
+	XChangeProperty(dpy, RootWindow(dpy, scrnum), _XA_MIT_PRIORITY_COLORS,
+			XA_CARDINAL, 32, PropModeReplace, NULL, 0);
 	RedirectError = FALSE;
 	XSetErrorHandler(CatchRedirectError);
 	XSelectInput(dpy, RootWindow (dpy, scrnum),
@@ -264,6 +273,12 @@ main(argc, argv, environ)
 	/* Note:  ScreenInfo struct is calloc'ed to initialize to zero. */
 	Scr = ScreenList[scrnum] = 
 	    (ScreenInfo *) calloc(1, sizeof(ScreenInfo));
+  	if (Scr == NULL)
+  	{
+  	    fprintf (stderr, "%s: unable to allocate memory for ScreenInfo structure for screen %d.\n",
+  		     ProgramName, scrnum);
+  	    continue;
+  	}
 
 	/* initialize list pointers, remember to put an initialization
 	 * in InitVariables also
@@ -350,7 +365,7 @@ main(argc, argv, environ)
 
 	if (FirstScreen)
 	{
-	    SetFocus ((TwmWindow *)NULL);
+	    SetFocus ((TwmWindow *)NULL, CurrentTime);
 
 	    /* define cursors */
 
@@ -385,25 +400,27 @@ main(argc, argv, environ)
 	Scr->tbpm.resize = None;
 	Scr->tbpm.question = None;
 	Scr->tbpm.menu = None;
+	Scr->tbpm.delete = None;
 
 	InitVariables();
 	InitMenus();
 
 	/* Parse it once for each screen. */
 	ParseTwmrc(InitFile);
+	assign_var_savecolor(); /* storeing pixels for twmrc "entities" */
 	if (Scr->SqueezeTitle == -1) Scr->SqueezeTitle = FALSE;
 	if (!Scr->HaveFonts) CreateFonts();
 	CreateGCs();
 	MakeMenus();
 
-	Scr->TitleBarFont.y += Scr->FramePadding;
-	Scr->TitleHeight = Scr->TitleBarFont.height + Scr->FramePadding * 2;
+	Scr->TitleBarFontSet.y += Scr->FramePadding;
+	Scr->TitleHeight = Scr->TitleBarFontSet.height + Scr->FramePadding * 2;
 	/* make title height be odd so buttons look nice and centered */
 	if (!(Scr->TitleHeight & 1)) Scr->TitleHeight++;
 
 	InitTitlebarButtons ();		/* menus are now loaded! */
 
-	XGrabServer(dpy);
+	XGrabServer(dpy); 
 	XSync(dpy, 0);
 
 	JunkX = 0;
@@ -461,8 +478,8 @@ main(argc, argv, environ)
 	
 	attributes.border_pixel = Scr->DefaultC.fore;
 	attributes.background_pixel = Scr->DefaultC.back;
-	attributes.event_mask = (ExposureMask |
-				 KeyPressMask | ButtonPressMask);
+	attributes.event_mask = (ExposureMask | ButtonPressMask |
+				 KeyPressMask | ButtonReleaseMask);
 	attributes.backing_store = NotUseful;
 	attributes.cursor = XCreateFontCursor (dpy, XC_hand2);
 	valuemask = (CWBorderPixel | CWBackPixel | CWEventMask | 
@@ -473,21 +490,21 @@ main(argc, argv, environ)
 					 (unsigned int) CopyFromParent,
 					 (Visual *) CopyFromParent,
 					 valuemask, &attributes);
-
-	Scr->SizeStringWidth = XTextWidth (Scr->SizeFont.font,
-					   " 8888 x 8888 ", 13);
+	XmbTextExtents(Scr->SizeFontSet.fontset, " 8888 x 8888 ", 13,
+		       &overall_ink_return, &overall_logical_return);
+	Scr->SizeStringWidth = overall_logical_return.width;
 	valuemask = (CWBorderPixel | CWBackPixel | CWBitGravity);
 	attributes.bit_gravity = NorthWestGravity;
 	Scr->SizeWindow = XCreateWindow (dpy, Scr->Root, 0, 0, 
 					 (unsigned int) Scr->SizeStringWidth,
-					 (unsigned int) (Scr->SizeFont.height +
+					 (unsigned int) (Scr->SizeFontSet.height +
 							 SIZE_VINDENT*2),
 					 (unsigned int) BW, 0,
 					 (unsigned int) CopyFromParent,
 					 (Visual *) CopyFromParent,
 					 valuemask, &attributes);
 
-	XUngrabServer(dpy);
+	XUngrabServer(dpy); 
 
 	FirstScreen = FALSE;
     	Scr->FirstTime = FALSE;
@@ -614,7 +631,7 @@ InitVariables()
     Scr->Highlight = TRUE;
     Scr->StackMode = TRUE;
     Scr->TitleHighlight = TRUE;
-    Scr->MoveDelta = 0;
+    Scr->MoveDelta = 1;		/* so that f.deltastop will work */
     Scr->ZoomCount = 8;
     Scr->SortIconMgr = FALSE;
     Scr->Shadow = TRUE;
@@ -633,30 +650,36 @@ InitVariables()
 #define DEFAULT_NICE_FONT "variable"
 #define DEFAULT_FAST_FONT "fixed"
 
-    Scr->TitleBarFont.font = NULL;
-    Scr->TitleBarFont.name = DEFAULT_NICE_FONT;
-    Scr->MenuFont.font = NULL;
-    Scr->MenuFont.name = DEFAULT_NICE_FONT;
-    Scr->IconFont.font = NULL;
-    Scr->IconFont.name = DEFAULT_NICE_FONT;
-    Scr->SizeFont.font = NULL;
-    Scr->SizeFont.name = DEFAULT_FAST_FONT;
-    Scr->IconManagerFont.font = NULL;
-    Scr->IconManagerFont.name = DEFAULT_NICE_FONT;
-    Scr->DefaultFont.font = NULL;
-    Scr->DefaultFont.name = DEFAULT_FAST_FONT;
+    Scr->TitleBarFontSet.fontset = NULL;
+    Scr->TitleBarFontSet.font = NULL;
+    Scr->TitleBarFontSet.name = DEFAULT_NICE_FONT;
+    Scr->MenuFontSet.fontset = NULL;
+    Scr->MenuFontSet.font = NULL;
+    Scr->MenuFontSet.name = DEFAULT_NICE_FONT;
+    Scr->IconFontSet.fontset = NULL;
+    Scr->IconFontSet.font = NULL;
+    Scr->IconFontSet.name = DEFAULT_NICE_FONT;
+    Scr->SizeFontSet.fontset = NULL;
+    Scr->SizeFontSet.font = NULL;
+    Scr->SizeFontSet.name = DEFAULT_FAST_FONT;
+    Scr->IconManagerFontSet.fontset = NULL;
+    Scr->IconManagerFontSet.font = NULL;
+    Scr->IconManagerFontSet.name = DEFAULT_NICE_FONT;
+    Scr->DefaultFontSet.fontset = NULL;
+    Scr->DefaultFontSet.font = NULL;
+    Scr->DefaultFontSet.name = DEFAULT_FAST_FONT;
 
 }
 
 
 CreateFonts ()
 {
-    GetFont(&Scr->TitleBarFont);
-    GetFont(&Scr->MenuFont);
-    GetFont(&Scr->IconFont);
-    GetFont(&Scr->SizeFont);
-    GetFont(&Scr->IconManagerFont);
-    GetFont(&Scr->DefaultFont);
+    GetFont(&Scr->TitleBarFontSet);
+    GetFont(&Scr->MenuFontSet);
+    GetFont(&Scr->IconFontSet);
+    GetFont(&Scr->SizeFontSet);
+    GetFont(&Scr->IconManagerFontSet);
+    GetFont(&Scr->DefaultFontSet);
     Scr->HaveFonts = TRUE;
 }
 
@@ -729,7 +752,8 @@ RestoreWithdrawnLocation (tmp)
  ***********************************************************************
  */
 
-void Reborder ()
+void Reborder (time)
+Time time;
 {
     TwmWindow *tmp;			/* temp twm window structure */
     int scrnum;
@@ -750,15 +774,16 @@ void Reborder ()
 	}
     }
 
-    XUngrabServer (dpy);
-    SetFocus ((TwmWindow*)NULL);
+    XUngrabServer (dpy); 
+    SetFocus ((TwmWindow*)NULL, time);
 }
 
-void Done()
+SIGNAL_T Done()
 {
-    Reborder ();
+    Reborder (CurrentTime);
     XCloseDisplay(dpy);
     exit(0);
+    SIGNAL_RETURN;
 }
 
 
@@ -798,7 +823,7 @@ static int CatchRedirectError(dpy, event)
     return 0;
 }
 
-
+Atom _XA_MIT_PRIORITY_COLORS;
 Atom _XA_WM_CHANGE_STATE;
 Atom _XA_WM_STATE;
 Atom _XA_WM_COLORMAP_WINDOWS;
@@ -809,6 +834,10 @@ Atom _XA_WM_DELETE_WINDOW;
 
 InternUsefulAtoms ()
 {
+    /* 
+     * Create priority colors if necessary.
+     */
+    _XA_MIT_PRIORITY_COLORS = XInternAtom(dpy, "_MIT_PRIORITY_COLORS", False);   
     _XA_WM_CHANGE_STATE = XInternAtom (dpy, "WM_CHANGE_STATE", False);
     _XA_WM_STATE = XInternAtom (dpy, "WM_STATE", False);
     _XA_WM_COLORMAP_WINDOWS = XInternAtom (dpy, "WM_COLORMAP_WINDOWS", False);

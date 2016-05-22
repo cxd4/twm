@@ -28,7 +28,7 @@
 
 /**********************************************************************
  *
- * $XConsortium: add_window.c,v 1.140 90/03/23 11:42:33 jim Exp $
+ * $XConsortium: add_window.c,v 1.153 91/07/10 13:17:26 dave Exp $
  *
  * Add a new window, put the titlbar and other stuff around
  * the window
@@ -36,11 +36,6 @@
  * 31-Mar-88 Tom LaStrange        Initial Version.
  *
  **********************************************************************/
-
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[]=
-"$XConsortium: add_window.c,v 1.140 90/03/23 11:42:33 jim Exp $";
-#endif
 
 #include <stdio.h>
 #include "twm.h"
@@ -71,6 +66,8 @@ static void CreateWindowTitlebarButtons();
 
 char NoName[] = "Untitled"; /* name if no name is specified */
 
+XRectangle overall_ink_return;
+XRectangle overall_logical_return;
 
 /************************************************************************
  *
@@ -146,10 +143,13 @@ IconMgr *iconp;
     int actual_format;
     unsigned long nitems, bytesafter;
     int ask_user;		/* don't know where to put the window */
-    long supplied = 0;
     int gravx, gravy;			/* gravity signs for positioning */
     int namelen;
     int bw2;
+
+    XTextProperty text_prop;
+    char **list;
+    int count;
 
 #ifdef DEBUG
     fprintf(stderr, "AddWindow: w = 0x%x\n", w);
@@ -157,6 +157,12 @@ IconMgr *iconp;
 
     /* allocate space for the twm window */
     tmp_win = (TwmWindow *)calloc(1, sizeof(TwmWindow));
+    if (tmp_win == 0)
+    {
+	fprintf (stderr, "%s: Unable to allocate memory to manage window ID %lx.\n",
+		 ProgramName, w);
+	return NULL;
+    }
     tmp_win->w = w;
     tmp_win->zoomed = ZOOM_NONE;
     tmp_win->iconmgr = iconm;
@@ -165,7 +171,19 @@ IconMgr *iconp;
 
     XSelectInput(dpy, tmp_win->w, PropertyChangeMask);
     XGetWindowAttributes(dpy, tmp_win->w, &tmp_win->attr);
-    XFetchName(dpy, tmp_win->w, &tmp_win->name);
+    if (!XGetWMName(dpy, tmp_win->w, &text_prop))
+	tmp_win->name = NoName;
+    else {
+	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
+	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
+	    != Success)
+	    tmp_win->name = NoName;
+	else {
+	    if (!(*list)) tmp_win->name = NoName;
+	    else tmp_win->name = *list;
+	}
+    }
+
     tmp_win->class = NoClass;
     XGetClassHint(dpy, tmp_win->w, &tmp_win->class);
     FetchWmProtocols (tmp_win);
@@ -180,37 +198,17 @@ IconMgr *iconp;
       tmp_win->attr.height = Scr->MaxWindowHeight;
 
     tmp_win->wmhints = XGetWMHints(dpy, tmp_win->w);
-    if (tmp_win->wmhints && (tmp_win->wmhints->flags & WindowGroupHint))
-	tmp_win->group = tmp_win->wmhints->window_group;
+    if (tmp_win->wmhints && (tmp_win->wmhints->flags & WindowGroupHint)) 
+      tmp_win->group = tmp_win->wmhints->window_group;
     else
-	tmp_win->group = NULL;
-
-    if (!XGetWMNormalHints (dpy, tmp_win->w, &tmp_win->hints, &supplied))
-      tmp_win->hints.flags = 0;
+	tmp_win->group = tmp_win->w/* NULL */;
 
     /*
      * The July 27, 1988 draft of the ICCCM ignores the size and position
      * fields in the WM_NORMAL_HINTS property.
      */
 
-    tmp_win->transient = Transient(tmp_win->w);
-    /*
-     * Don't bother user if:
-     * 
-     *     o  the window is a transient, or
-     * 
-     *     o  a USPosition was requested, or
-     * 
-     *     o  a PPosition was requested and UsePPosition is ON or
-     *        NON_ZERO if the window is at other than (0,0)
-     */
-    ask_user = TRUE;
-    if (tmp_win->transient || 
-	(tmp_win->hints.flags & USPosition) ||
-        ((tmp_win->hints.flags & PPosition) && Scr->UsePPosition &&
-	 (Scr->UsePPosition == PPOS_ON || 
-	  tmp_win->attr.x != 0 || tmp_win->attr.y != 0)))
-      ask_user = FALSE;
+    tmp_win->transient = Transient(tmp_win->w, &tmp_win->transientfor);
 
     if (tmp_win->name == NULL)
 	tmp_win->name = NoName;
@@ -219,33 +217,34 @@ IconMgr *iconp;
     if (tmp_win->class.res_class == NULL)
     	tmp_win->class.res_class = NoName;
 
-    tmp_win->full_name = tmp_win->name;
+    tmp_win->full_name = tmp_win->name;	
     namelen = strlen (tmp_win->name);
 
     tmp_win->highlight = Scr->Highlight && 
-	(!(short)LookInList(Scr->NoHighlight, tmp_win->full_name, 
+	(!(short)(int) LookInList(Scr->NoHighlight, tmp_win->full_name, 
 	    &tmp_win->class));
 
     tmp_win->stackmode = Scr->StackMode &&
-	(!(short)LookInList(Scr->NoStackModeL, tmp_win->full_name, 
+	(!(short)(int) LookInList(Scr->NoStackModeL, tmp_win->full_name, 
 	    &tmp_win->class));
 
     tmp_win->titlehighlight = Scr->TitleHighlight && 
-	(!(short)LookInList(Scr->NoTitleHighlight, tmp_win->full_name, 
+	(!(short)(int) LookInList(Scr->NoTitleHighlight, tmp_win->full_name, 
 	    &tmp_win->class));
 
-    tmp_win->auto_raise = (short)LookInList(Scr->AutoRaise, tmp_win->full_name,
+    tmp_win->auto_raise = (short)(int) LookInList(Scr->AutoRaise, 
+						  tmp_win->full_name,
 					    &tmp_win->class);
     if (tmp_win->auto_raise) Scr->NumAutoRaises++;
     tmp_win->iconify_by_unmapping = Scr->IconifyByUnmapping;
     if (Scr->IconifyByUnmapping)
     {
 	tmp_win->iconify_by_unmapping = iconm ? FALSE :
-	    !(short)LookInList(Scr->DontIconify, tmp_win->full_name,
+	    !(short)(int) LookInList(Scr->DontIconify, tmp_win->full_name,
 		&tmp_win->class);
     }
     tmp_win->iconify_by_unmapping |= 
-	(short)LookInList(Scr->IconifyByUn, tmp_win->full_name,
+	(short)(int) LookInList(Scr->IconifyByUn, tmp_win->full_name,
 	    &tmp_win->class);
 
     if (LookInList(Scr->WindowRingL, tmp_win->full_name, &tmp_win->class)) {
@@ -263,7 +262,6 @@ IconMgr *iconp;
     tmp_win->ring.cursor_valid = False;
 
     tmp_win->squeeze_info = NULL;
-#ifdef SHAPE
     /*
      * get the squeeze information; note that this does not have to be freed
      * since it is coming from the screen list
@@ -281,7 +279,6 @@ IconMgr *iconp;
 	    }
 	}
       }
-#endif
 
     tmp_win->old_bw = tmp_win->attr.border_width;
 
@@ -315,9 +312,26 @@ IconMgr *iconp;
 	tmp_win->wmhints->flags |= StateHint;
     }
 
-    if (!(supplied & PWinGravity)) SimulateWinGravity (tmp_win);
+    GetWindowSizeHints (tmp_win);
     GetGravityOffsets (tmp_win, &gravx, &gravy);
 
+    /*
+     * Don't bother user if:
+     * 
+     *     o  the window is a transient, or
+     * 
+     *     o  a USPosition was requested, or
+     * 
+     *     o  a PPosition was requested and UsePPosition is ON or
+     *        NON_ZERO if the window is at other than (0,0)
+     */
+    ask_user = TRUE;
+    if (tmp_win->transient || 
+	(tmp_win->hints.flags & USPosition) ||
+        ((tmp_win->hints.flags & PPosition) && Scr->UsePPosition &&
+	 (Scr->UsePPosition == PPOS_ON || 
+	  tmp_win->attr.x != 0 || tmp_win->attr.y != 0)))
+      ask_user = FALSE;
 
     /*
      * do any prompting for position
@@ -344,9 +358,9 @@ IconMgr *iconp;
 	     */
 	    while (TRUE)
 	    {
-		XUngrabServer(dpy);
+ 		XUngrabServer(dpy); 
 		XSync(dpy, 0);
-		XGrabServer(dpy);
+		XGrabServer(dpy); 
 
 		JunkMask = 0;
 		if (!XQueryPointer (dpy, Scr->Root, &JunkRoot, 
@@ -381,60 +395,128 @@ IconMgr *iconp;
 		/* 
 		 * this will cause a warp to the indicated root
 		 */
-		stat = XGrabPointer(dpy, Scr->Root, False,
-		    ButtonPressMask | ButtonReleaseMask,
+ 		stat = XGrabPointer(dpy, Scr->Root, False,
+		    ButtonPressMask | ButtonReleaseMask |
+		    PointerMotionMask | PointerMotionHintMask,
 		    GrabModeAsync, GrabModeAsync,
-		    Scr->Root, UpperLeftCursor, CurrentTime);
+		    Scr->Root, UpperLeftCursor, CurrentTime); 
 
 		if (stat == GrabSuccess)
 		    break;
 	    }
 
-	    width = (SIZE_HINDENT + XTextWidth (Scr->SizeFont.font,
-						tmp_win->name, namelen));
-	    height = Scr->SizeFont.height + SIZE_VINDENT * 2;
+	    XmbTextExtents(Scr->SizeFontSet.fontset, tmp_win->name,
+			   namelen, &overall_ink_return,
+			   &overall_logical_return);
+	    width = (SIZE_HINDENT + overall_logical_return.width);
+
+	    height = Scr->SizeFontSet.height + SIZE_VINDENT * 2;
 	    
 	    XResizeWindow (dpy, Scr->SizeWindow, width + SIZE_HINDENT, height);
 	    XMapRaised(dpy, Scr->SizeWindow);
 	    InstallRootColormap();
 
 	    FBF(Scr->DefaultC.fore, Scr->DefaultC.back,
-		Scr->SizeFont.font->fid);
-	    XDrawImageString (dpy, Scr->SizeWindow, Scr->NormalGC,
-			      SIZE_HINDENT,
-			      SIZE_VINDENT + Scr->SizeFont.font->ascent,
-			      tmp_win->name, namelen);
+		Scr->SizeFontSet.font->fid);
+
+	    XmbDrawImageString (dpy, Scr->SizeWindow, 
+				Scr->SizeFontSet.fontset,
+				Scr->NormalGC,
+				SIZE_HINDENT,
+				SIZE_VINDENT + Scr->SizeFontSet.font->ascent,
+				tmp_win->name, namelen);
 
 	    AddingW = tmp_win->attr.width + bw2;
 	    AddingH = tmp_win->attr.height + tmp_win->title_height + bw2;
 
+		MoveOutline(Scr->Root, AddingX, AddingY, AddingW, AddingH,
+			    tmp_win->frame_bw, tmp_win->title_height);
+
 	    while (TRUE)
-	    {
+		{
+		XMaskEvent(dpy, ButtonPressMask | PointerMotionMask, &event);
+
+		if (Event.type == MotionNotify) {
+		    /* discard any extra motion events before a release */
+		    while(XCheckMaskEvent(dpy,
+			ButtonMotionMask | ButtonPressMask, &Event))
+			if (Event.type == ButtonPress)
+			    break;
+		}
+		
+		if (event.type == ButtonPress) {
+		  AddingX = event.xbutton.x_root;
+		  AddingY = event.xbutton.y_root;
+		  
+		  /* DontMoveOff prohibits user form off-screen placement */
+		  if (Scr->DontMoveOff)	
+  		    {
+		      int AddingR, AddingB;
+		      
+		      AddingR = AddingX + AddingW;
+		      AddingB = AddingY + AddingH;
+		      
+		      if (AddingX < 0)
+			AddingX = 0;
+		      if (AddingR > Scr->MyDisplayWidth)
+			AddingX = Scr->MyDisplayWidth - AddingW;
+		      
+		      if (AddingY < 0)
+			AddingY = 0;
+		      if (AddingB > Scr->MyDisplayHeight)
+			AddingY = Scr->MyDisplayHeight - AddingH;
+		      
+ 		    }
+		  break;
+		}
+
+		if (event.type != MotionNotify) {
+		    continue;
+	    }
+
 		XQueryPointer(dpy, Scr->Root, &JunkRoot, &JunkChild,
 		    &JunkX, &JunkY, &AddingX, &AddingY, &JunkMask);
+
+		if (Scr->DontMoveOff)
+		{
+		    int AddingR, AddingB;
+
+		    AddingR = AddingX + AddingW;
+		    AddingB = AddingY + AddingH;
+		    
+		    if (AddingX < 0)
+		        AddingX = 0;
+		    if (AddingR > Scr->MyDisplayWidth)
+		        AddingX = Scr->MyDisplayWidth - AddingW;
+
+		    if (AddingY < 0)
+			AddingY = 0;
+		    if (AddingB > Scr->MyDisplayHeight)
+			AddingY = Scr->MyDisplayHeight - AddingH;
+		}
 
 		MoveOutline(Scr->Root, AddingX, AddingY, AddingW, AddingH,
 			    tmp_win->frame_bw, tmp_win->title_height);
 
-		if (XCheckMaskEvent(dpy, ButtonPressMask, &event))
-		{
-		    AddingX = event.xbutton.x_root;
-		    AddingY = event.xbutton.y_root;
-		    break;
-		}
 	    }
 
 	    if (event.xbutton.button == Button2) {
 		int lastx, lasty;
 
+		XmbTextExtents(Scr->SizeFontSet.fontset, ": ", 2,
+			       &overall_ink_return,
+			       &overall_logical_return);
 		Scr->SizeStringOffset = width +
-		  XTextWidth(Scr->SizeFont.font, ": ", 2);
+		    overall_logical_return.width;
 		XResizeWindow (dpy, Scr->SizeWindow, Scr->SizeStringOffset +
 			       Scr->SizeStringWidth, height);
-		XDrawImageString (dpy, Scr->SizeWindow, Scr->NormalGC, width,
-				  SIZE_VINDENT + Scr->SizeFont.font->ascent,
-				  ": ", 2);
-		if (Scr->AutoRelativeResize) {
+		XmbDrawImageString(dpy, Scr->SizeWindow,
+				   Scr->SizeFontSet.fontset,
+				   Scr->NormalGC,
+				   width,
+				   SIZE_VINDENT + Scr->SizeFontSet.font->ascent,
+				   ": ", 2);
+		if (0/*Scr->AutoRelativeResize*/) {
 		    int dx = (tmp_win->attr.width / 4);
 		    int dy = (tmp_win->attr.height / 4);
 		    
@@ -460,6 +542,27 @@ IconMgr *iconp;
 		lasty = -10000;
 		while (TRUE)
 		{
+		    XMaskEvent(dpy,
+			       ButtonReleaseMask | ButtonMotionMask, &event);
+
+		    if (Event.type == MotionNotify) {
+			/* discard any extra motion events before a release */
+			while(XCheckMaskEvent(dpy,
+			    ButtonMotionMask | ButtonReleaseMask, &Event))
+			    if (Event.type == ButtonRelease)
+				break;
+		    }
+
+		    if (event.type == ButtonRelease)
+		    {
+			AddEndResize(tmp_win);
+			break;
+		    }
+
+		    if (event.type != MotionNotify) {
+			continue;
+		    }
+
 		    /*
 		     * XXX - if we are going to do a loop, we ought to consider
 		     * using multiple GXxor lines so that we don't need to 
@@ -476,11 +579,6 @@ IconMgr *iconp;
 			lasty = AddingY;
 		    }
 
-		    if (XCheckMaskEvent(dpy, ButtonReleaseMask, &event))
-		    {
-			AddEndResize(tmp_win);
-			break;
-		    }
 		}
 	    } 
 	    else if (event.xbutton.button == Button3)
@@ -508,14 +606,14 @@ IconMgr *iconp;
 	    MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
 	    XUnmapWindow(dpy, Scr->SizeWindow);
 	    UninstallRootColormap();
-	    XUngrabPointer(dpy, CurrentTime);
+ 	    XUngrabPointer(dpy, CurrentTime); 
 
 	    tmp_win->attr.x = AddingX;
 	    tmp_win->attr.y = AddingY + tmp_win->title_height;
 	    tmp_win->attr.width = AddingW - bw2;
 	    tmp_win->attr.height = AddingH - tmp_win->title_height - bw2;
 
-	    XUngrabServer(dpy);
+ 	    XUngrabServer(dpy); 
 	}
       }
     } else {				/* put it where asked, mod title bar */
@@ -541,23 +639,29 @@ IconMgr *iconp;
     tmp_win->title_width = tmp_win->attr.width;
 
     if (tmp_win->old_bw) XSetWindowBorderWidth (dpy, tmp_win->w, 0);
+ 
+    XmbTextExtents(Scr->TitleBarFontSet.fontset, tmp_win->name,
+		   namelen, &overall_ink_return, &overall_logical_return);
+    tmp_win->name_width = overall_logical_return.width;
 
-    tmp_win->name_width = XTextWidth(Scr->TitleBarFont.font, tmp_win->name,
-				     namelen);
-
-    if (XGetWindowProperty (dpy, tmp_win->w, XA_WM_ICON_NAME, 0L, 200L, False,
-			    XA_STRING, &actual_type, &actual_format, &nitems,
-			    &bytesafter,(unsigned char **)&tmp_win->icon_name))
+    if (!XGetWMIconName (dpy, tmp_win->w, &text_prop))
 	tmp_win->icon_name = tmp_win->name;
-
-    if (tmp_win->icon_name == NULL)
-	tmp_win->icon_name = tmp_win->name;
+    else {
+	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
+	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
+	    != Success)
+	    tmp_win->icon_name = tmp_win->name;
+	else {
+	    if (!(*list)) tmp_win->icon_name = tmp_win->name;
+	    else tmp_win->icon_name = *list;
+	}
+    }
 
     tmp_win->iconified = FALSE;
     tmp_win->icon = FALSE;
     tmp_win->icon_on = FALSE;
 
-    XGrabServer(dpy);
+    XGrabServer(dpy); 
 
     /*
      * Make sure the client window still exists.  We don't want to leave an
@@ -570,7 +674,7 @@ IconMgr *iconp;
 		     &JunkWidth, &JunkHeight, &JunkBW, &JunkDepth) == 0)
     {
 	free((char *)tmp_win);
-	XUngrabServer(dpy);
+ 	XUngrabServer(dpy); 
 	return(NULL);
     }
 
@@ -690,16 +794,13 @@ IconMgr *iconp;
     attributes.do_not_propagate_mask = ButtonPressMask | ButtonReleaseMask;
     XChangeWindowAttributes (dpy, tmp_win->w, valuemask, &attributes);
 
-#ifdef SHAPE
     if (HasShape)
 	XShapeSelectInput (dpy, tmp_win->w, ShapeNotifyMask);
-#endif
 	
     if (tmp_win->title_w) {
 	XMapWindow (dpy, tmp_win->title_w);
     }
 
-#ifdef SHAPE
     if (HasShape) {
 	int xws, yws, xbs, ybs;
 	unsigned wws, hws, wbs, hbs;
@@ -711,7 +812,6 @@ IconMgr *iconp;
 			    &clipShaped, &xbs, &ybs, &wbs, &hbs);
 	tmp_win->wShaped = boundingShaped;
     }
-#endif
 
     if (!tmp_win->iconmgr)
 	XAddToSaveSet(dpy, tmp_win->w);
@@ -735,8 +835,8 @@ IconMgr *iconp;
 
     if (!tmp_win->iconmgr)
     {
-	GrabButtons(tmp_win);
-	GrabKeys(tmp_win);
+ 	GrabButtons(tmp_win); 
+ 	GrabKeys(tmp_win); 
     }
 
     (void) AddIconManager(tmp_win);
@@ -765,13 +865,13 @@ IconMgr *iconp;
 	}
     }
 
-    XUngrabServer(dpy);
+    XUngrabServer(dpy); 
 
     /* if we were in the middle of a menu activated function, regrab
      * the pointer 
      */
     if (RootFunction)
-	ReGrab();
+	ReGrab(); 
 
     return (tmp_win);
 }
@@ -868,9 +968,13 @@ TwmWindow *tmp_win;
 	{
 	    if (Scr->Mouse[i][C_WINDOW][j].func != NULL)
 	    {
-		XGrabButton(dpy, i, j, tmp_win->w,
-		    True, ButtonPressMask | ButtonReleaseMask,
-		    GrabModeAsync, GrabModeAsync, None, Scr->FrameCursor);
+	        /* twm used to do this grab on the application main window,
+                 * tmp_win->w . This was not ICCCM complient and was changed.
+		 */
+		XGrabButton(dpy, i, j, tmp_win->frame, 
+			    True, ButtonPressMask | ButtonReleaseMask,
+			    GrabModeAsync, GrabModeAsync, None, 
+			    Scr->FrameCursor);
 	    }
 	}
     }
@@ -938,7 +1042,7 @@ TwmWindow *tmp_win;
 	{
 	    for (p = &Scr->iconmgr; p != NULL; p = p->next)
 	    {
-		XUngrabKey(dpy, tmp->keycode, tmp->mods, p->twm_win->w);
+		XUngrabKey(dpy, tmp->keycode, tmp->mods, p->twm_win->w); 
 	    }
 	}
     }
@@ -1032,6 +1136,7 @@ void ComputeCommonTitleOffsets ()
 
 void ComputeWindowTitleOffsets (tmp_win, width, squeeze)
     TwmWindow *tmp_win;
+    int width;
     Bool squeeze;
 {
     tmp_win->highlightx = (Scr->TBInfo.titlex + tmp_win->name_width);
@@ -1061,7 +1166,6 @@ void ComputeTitleLocation (tmp)
     tmp->title_x = -tmp->frame_bw;
     tmp->title_y = -tmp->frame_bw;
 
-#ifdef SHAPE
     if (tmp->squeeze_info) {
 	register SqueezeInfo *si = tmp->squeeze_info;
 	int basex;
@@ -1104,7 +1208,6 @@ void ComputeTitleLocation (tmp)
 
 	tmp->title_x = basex - tmp->frame_bw;
     }
-#endif
 }
 
 
@@ -1279,7 +1382,7 @@ CreateColormapWindow(w, creating_parent, property_window)
 	 * Otherwise, we assume they are unobscured.
 	 */
 	cwin->visibility = creating_parent ?
-	    VisibilityFullyObscured : VisibilityUnobscured;
+	    VisibilityPartiallyObscured : VisibilityUnobscured;
 	cwin->refcnt = 1;
 
 	/*
@@ -1312,8 +1415,8 @@ FetchWmColormapWindows (tmp)
 
     number_cmap_windows = 0;
 
-    if (previously_installed = (Scr->cmapInfo.cmaps == &tmp->cmaps &&
-				tmp->cmaps.number_cwins)) {
+    if (/* SUPPRESS 560 */previously_installed = 
+       (Scr->cmapInfo.cmaps == &tmp->cmaps && tmp->cmaps.number_cwins)) {
 	cwins = tmp->cmaps.cwins;
 	for (i = 0; i < tmp->cmaps.number_cwins; i++)
 	    cwins[i]->colormap->state = 0;
@@ -1429,10 +1532,20 @@ FetchWmColormapWindows (tmp)
 }
 
 
-SimulateWinGravity (tmp)
+void GetWindowSizeHints (tmp)
     TwmWindow *tmp;
 {
-    if (tmp->hints.flags & USPosition) {
+    long supplied = 0;
+
+    if (!XGetWMNormalHints (dpy, tmp->w, &tmp->hints, &supplied))
+      tmp->hints.flags = 0;
+
+    if (tmp->hints.flags & PResizeInc) {
+	if (tmp->hints.width_inc == 0) tmp->hints.width_inc = 1;
+	if (tmp->hints.height_inc == 0) tmp->hints.height_inc = 1;
+    }
+
+    if (!(supplied & PWinGravity) && (tmp->hints.flags & USPosition)) {
 	static int gravs[] = { SouthEastGravity, SouthWestGravity,
 			       NorthEastGravity, NorthWestGravity };
 	int right =  tmp->attr.x + tmp->attr.width + 2 * tmp->old_bw;

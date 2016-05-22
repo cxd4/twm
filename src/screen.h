@@ -21,7 +21,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: screen.h,v 1.61 90/03/15 14:23:04 jim Exp $
+ * $XConsortium: screen.h,v 1.62 91/05/01 17:33:09 keith Exp $
  *
  * twm per-screen data include file
  *
@@ -54,6 +54,7 @@ typedef struct _TitlebarPixmaps {
     Pixmap resize;
     Pixmap question;
     Pixmap menu;
+    Pixmap delete;
 } TitlebarPixmaps;
 
 typedef struct ScreenInfo
@@ -77,7 +78,8 @@ typedef struct ScreenInfo
     TitlebarPixmaps tbpm;	/* titlebar pixmaps */
     Pixmap UnknownPm;		/* the unknown icon pixmap */
     Pixmap siconifyPm;		/* the icon manager iconify pixmap */
-    Pixmap pullPm;		/* pull right menu arrow */
+    Pixmap pullPm;		/* pull right menu icon */
+    int	pullW, pullH;		/* size of pull right menu icon */
     Pixmap hilitePm;		/* focus highlight window background */
     int hilite_pm_width, hilite_pm_height;  /* cache the size */
 
@@ -179,12 +181,12 @@ typedef struct ScreenInfo
     unsigned long Black;
     unsigned long White;
     unsigned long XORvalue;	/* number to use when drawing xor'ed */
-    MyFont TitleBarFont;	/* title bar font structure */
-    MyFont MenuFont;		/* menu font structure */
-    MyFont IconFont;		/* icon font structure */
-    MyFont SizeFont;		/* resize font structure */
-    MyFont IconManagerFont;	/* window list font structure */
-    MyFont DefaultFont;
+    MyFontSet TitleBarFontSet;	/* title bar fontset structure */
+    MyFontSet MenuFontSet;	/* menu fontset structure */
+    MyFontSet IconFontSet;	/* icon fontset structure */
+    MyFontSet SizeFontSet;	/* resize fontset structure */
+    MyFontSet IconManagerFontSet;	/* window list fontset structure */
+    MyFontSet DefaultFontSet;
     IconMgr iconmgr;		/* default icon manager */
     struct IconRegion *FirstRegion;	/* pointer to icon regions */
     struct IconRegion *LastRegion;	/* pointer to the last icon region */

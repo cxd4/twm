@@ -1,5 +1,4 @@
-/*****************************************************************************/
-/**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
+/*****************************************************************************//**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
 /**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
@@ -28,12 +27,12 @@
 
 /***********************************************************************
  *
- * $XConsortium: twm.h,v 1.62 90/03/22 09:39:08 jim Exp $
+ * $XConsortium: twm.h,v 1.74 91/05/31 17:38:30 dave Exp $
  *
  * twm include file
  *
  * 28-Oct-87 Thomas E. LaStrange	File created
- *
+ * 10-Oct-90 David M. Sternlicht        Storeing saved colors on root
  ***********************************************************************/
 
 #ifndef _TWM_
@@ -42,22 +41,24 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
-#ifdef SHAPE
 #include <X11/extensions/shape.h>
-#endif
+#include <X11/Xfuncs.h>
 
 #ifndef WithdrawnState
 #define WithdrawnState 0
 #endif
 
 typedef unsigned long Pixel;
+#define PIXEL_ALREADY_TYPEDEFED		/* for Xmu/Drawing.h */
 
 #ifdef SIGNALRETURNSINT
-typedef int (*SigProc)();	/* type of function returned by signal() */
+#define SIGNAL_T int
+#define SIGNAL_RETURN return 0
 #else
-typedef void (*SigProc)();	/* type of function returned by signal() */
+#define SIGNAL_T void
+#define SIGNAL_RETURN return
 #endif
-
+typedef SIGNAL_T (*SigProc)();	/* type of function returned by signal() */
 
 #define BW 2			/* border width */
 #define BW2 4			/* border width  * 2 */
@@ -84,7 +85,8 @@ typedef void (*SigProc)();	/* type of function returned by signal() */
 #define C_FRAME		4
 #define C_ICONMGR	5
 #define C_NAME		6
-#define NUM_CONTEXTS	7
+#define C_IDENTIFY      7
+#define NUM_CONTEXTS	8
 
 #define C_WINDOW_BIT	(1 << C_WINDOW)
 #define C_TITLE_BIT	(1 << C_TITLE)
@@ -98,7 +100,8 @@ typedef void (*SigProc)();	/* type of function returned by signal() */
 			 C_ROOT_BIT | C_FRAME_BIT | C_ICONMGR_BIT)
 
 /* modifiers for button presses */
-#define MOD_SIZE	((ShiftMask | ControlMask | Mod1Mask) + 1)
+#define MOD_SIZE	((ShiftMask | ControlMask | Mod1Mask \
+			  | Mod2Mask | Mod3Mask | Mod4Mask | Mod5Mask) + 1)
 
 #define TITLE_BAR_SPACE         1	/* 2 pixel space bordering chars */
 #define TITLE_BAR_FONT_HEIGHT   15	/* max of 15 pixel high chars */
@@ -118,13 +121,14 @@ typedef void (*SigProc)();	/* type of function returned by signal() */
     Gcv.background = fix_back;\
     XChangeGC(dpy, Scr->NormalGC, GCForeground|GCBackground,&Gcv)
 
-typedef struct MyFont
+typedef struct MyFontSet
 {
-    char *name;			/* name of the font */
+    XFontSet fontset;		/* XFontSet */
+    char *name;			/* base font name list */
     XFontStruct *font;		/* font structure */
     int height;			/* height of the font */
     int y;			/* Y coordinate to draw characters */
-} MyFont;
+} MyFontSet;
 
 typedef struct ColorPair
 {
@@ -256,6 +260,7 @@ typedef struct TwmWindow
     short iconify_by_unmapping;	/* unmap window to iconify it */
     short iconmgr;		/* this is an icon manager window */
     short transient;		/* this is a transient window */
+    Window transientfor;	/* window contained in XA_XM_TRANSIENT_FOR */
     short titlehighlight;	/* should I highlight the title bar */
     struct IconMgr *iconmgrp;	/* pointer to it if this is an icon manager */
     int save_frame_x;		/* x position of frame */
@@ -263,9 +268,7 @@ typedef struct TwmWindow
     int save_frame_width;	/* width of frame */
     int save_frame_height;	/* height of frame */
     short zoomed;		/* is the window zoomed? */
-#ifdef SHAPE
     short wShaped;		/* this window has a bounding shape */
-#endif
     unsigned long protocols;	/* which protocols this window handles */
     Colormaps cmaps;		/* colormaps for this application */
     TBWindow *titlebuttons;
@@ -281,23 +284,29 @@ typedef struct TwmWindow
 #define DoesWmSaveYourself	(1L << 1)
 #define DoesWmDeleteWindow	(1L << 2)
 
-#define TBPM_XLOGO ":xlogo"	/* name of titlebar pixmap for xlogo */
-#define TBPM_ICONIFY ":iconify"	/* same image as xlogo */
+#define TBPM_DOT ":dot"		/* name of titlebar pixmap for dot */
+#define TBPM_ICONIFY ":iconify"	/* same image as dot */
 #define TBPM_RESIZE ":resize"	/* name of titlebar pixmap for resize button */
-#define TBPM_QUESTION ":question"	/* name of unknown titlebar pixmap */
+#define TBPM_XLOGO ":xlogo"	/* name of titlebar pixmap for xlogo */
+#define TBPM_DELETE ":delete"	/* same image as xlogo */
 #define TBPM_MENU ":menu"	/* name of titlebar pixmap for menus */
+#define TBPM_QUESTION ":question"	/* name of unknown titlebar pixmap */
 
+#include <X11/Xosdefs.h>
+#ifndef X_NOT_STDC_ENV
+#include <stdlib.h>
+#else
 extern char *malloc(), *calloc(), *realloc(), *getenv();
 extern void free();
-extern void Reborder(), Done();
+#endif
+extern void Reborder();
+extern SIGNAL_T Done();
 void ComputeCommonTitleOffsets();
 void ComputeWindowTitleOffsets(), ComputeTitleLocation();
 extern char *ProgramName;
 extern Display *dpy;
 extern Window ResizeWindow;	/* the window we are resizing */
-#ifdef SHAPE
 extern int HasShape;		/* this server supports Shape extension */
-#endif
 
 extern int PreviousScreen;
 
@@ -332,6 +341,7 @@ extern int Argc;
 extern char **Argv;
 extern char **Environ;
 extern void NewFontCursor();
+extern Pixmap CreateMenuIcon();
 
 extern Bool ErrorOccurred;
 extern XErrorEvent LastErrorEvent;
@@ -341,6 +351,7 @@ extern XErrorEvent LastErrorEvent;
 extern Bool RestartPreviousState;
 extern Bool GetWMState();
 
+extern Atom _XA_MIT_PRIORITY_COLORS;
 extern Atom _XA_WM_CHANGE_STATE;
 extern Atom _XA_WM_STATE;
 extern Atom _XA_WM_COLORMAP_WINDOWS;

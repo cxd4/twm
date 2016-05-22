@@ -1,5 +1,16 @@
-To save Tom LaStrange from being blaimed for any of the massive numbers of
-changes that have been done to twm since gave up control of it, the name "twm"
-now stands for "Tab Window Manager" (try the SqueezeTitle option to see why). 
+		Internationalized TWM
 
+To build i18n-twm you should use the following commands:
 
+	%cd twm
+	%xmkmf <Topdir> <Curdir> (you may set Topdir and Curdir)
+	%make includes
+	%make depend
+	%make all
+
+After building, It can be installed in your local bin using:
+
+	%make install
+
+Takashi Inoue		takashi@ari.ncl.omron.co.jp
+Omron Corporation
