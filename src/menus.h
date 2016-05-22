@@ -1,6 +1,8 @@
 /*****************************************************************************/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
+/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
+/**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
 /**                                                                         **/
@@ -9,23 +11,24 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    name  of Evans & Sutherland  not be used in advertising or publi-    **/
-/**    city pertaining to distribution  of the software without  specif-    **/
-/**    ic, written prior permission.                                        **/
+/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    in publicity pertaining to distribution of the  software  without    **/
+/**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS  & SUTHERLAND  DISCLAIMS  ALL  WARRANTIES  WITH  REGARD  TO    **/
-/**    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILI-    **/
-/**    TY AND FITNESS, IN NO EVENT SHALL EVANS &  SUTHERLAND  BE  LIABLE    **/
-/**    FOR  ANY  SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY  DAM-    **/
-/**    AGES  WHATSOEVER RESULTING FROM  LOSS OF USE,  DATA  OR  PROFITS,    **/
-/**    WHETHER   IN  AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS    **/
-/**    ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE  OR PER-    **/
-/**    FORMANCE OF THIS SOFTWARE.                                           **/
+/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
+/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
+/**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
+/**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
+/**    OR PERFORMANCE OF THIS SOFTWARE.                                     **/
 /*****************************************************************************/
+
 
 /***********************************************************************
  *
- * $Header: menus.h,v 1.18 88/10/13 06:35:53 toml Exp $
+ * $XConsortium: menus.h,v 1.24 89/12/10 17:46:26 jim Exp $
  *
  * twm menus include file
  *
@@ -48,12 +51,17 @@ typedef struct MenuItem
     struct MenuRoot *sub;	/* MenuRoot of a pull right menu */
     struct MenuRoot *root;	/* back pointer to my MenuRoot */
     char *item;			/* the character string displayed */
-    int y;			/* y coordinate for text */
     char *action;		/* action to be performed */
-    Window w;			/* the item window */
-    Window pull;		/* the pull right window (if any) */
-    int func;			/* twm built in function */
-    int state;			/* video state, 0 = normal, 1 = reversed */
+    Pixel fore;			/* foreground color */
+    Pixel back;			/* background color */
+    Pixel hi_fore;		/* highlight foreground */
+    Pixel hi_back;		/* highlight background */
+    short item_num;		/* item number of this menu */
+    short x;			/* x coordinate for text */
+    short func;			/* twm built in function */
+    short state;		/* video state, 0 = normal, 1 = reversed */
+    short strlen;		/* strlen(item) */
+    short user_colors;		/* colors were specified */
 } MenuItem;
 
 typedef struct MenuRoot
@@ -65,12 +73,21 @@ typedef struct MenuRoot
     char *name;			/* name of root */
     Window w;			/* the window of the menu */
     Window shadow;		/* the shadow window */
-    int mapped;			/* has the menu ever been mapped ? */
-    int width;			/* width of the menu */
-    int items;			/* number of items in the menu */
-    int pull;			/* is there a pull right entry ? */
-    int active;			/* this menu is active */
+    Pixel hi_fore;		/* highlight foreground */
+    Pixel hi_back;		/* highlight background */
+    short mapped;		/* NEVER_MAPPED, UNMAPPED, or MAPPED */
+    short height;		/* height of the menu */
+    short width;		/* width of the menu */
+    short items;		/* number of items in the menu */
+    short pull;			/* is there a pull right entry ? */
+    short entered;		/* EnterNotify following pop up */
+    short real_menu;		/* this is a real menu */
 } MenuRoot;
+
+#define NEVER_MAPPED	0	/* constants for mapped field of MenuRoot */
+#define UNMAPPED	1
+#define MAPPED		2
+
 
 typedef struct MouseButton
 {
@@ -94,17 +111,11 @@ typedef struct FuncKey
 } FuncKey;
 
 extern int RootFunction;
-extern MouseButton Mouse[MAX_BUTTONS+1][NUM_CONTEXTS][MOD_SIZE];
-extern MouseButton DefaultFunction;
-extern MouseButton WindowFunction;
-extern MenuRoot *MenuList;
-extern MenuRoot *LastMenu;
 extern MenuRoot *ActiveMenu;
 extern MenuItem *ActiveItem;
-extern MenuRoot *Windows;
 extern int MoveFunction;
-
-extern int ConstMove;		/* constrained move variables */
+extern int WindowMoved;
+extern int ConstMove;
 extern int ConstMoveDir;
 extern int ConstMoveX;
 extern int ConstMoveY;
@@ -113,20 +124,31 @@ extern int ConstMoveXR;
 extern int ConstMoveYT;
 extern int ConstMoveYB;
 
+#define MAXMENUDEPTH	10	/* max number of nested menus */
+extern int MenuDepth;
+
 #define MOVE_NONE	0	/* modes of constrained move */
 #define MOVE_VERT	1
 #define MOVE_HORIZ	2
 
+#define WARPSCREEN_NEXT "next"
+#define WARPSCREEN_PREV "prev"
+#define WARPSCREEN_BACK "back"
+
+#define COLORMAP_NEXT "next"
+#define COLORMAP_PREV "prev"
+#define COLORMAP_DEFAULT "default"
+
+extern void InitTitlebarButtons();
 extern void InitMenus();
 extern MenuRoot *NewMenuRoot();
 extern MenuItem *AddToMenu();
-extern void PopUpMenu();
+extern Bool PopUpMenu();
 extern MenuRoot *FindMenuRoot();
-extern FuncKey FuncKeyRoot;
-extern void AddFuncKey();
-extern void ExecuteFunction();
+extern Bool AddFuncKey();
+extern int ExecuteFunction();
 extern int DeferExecution();
 extern void Execute();
 extern void FocusOnRoot();
 
-#endif _MENUS_
+#endif /* _MENUS_ */

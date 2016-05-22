@@ -1,6 +1,8 @@
 /*****************************************************************************/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
+/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
+/**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
 /**                                                                         **/
@@ -9,23 +11,24 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    name  of Evans & Sutherland  not be used in advertising or publi-    **/
-/**    city pertaining to distribution  of the software without  specif-    **/
-/**    ic, written prior permission.                                        **/
+/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    in publicity pertaining to distribution of the  software  without    **/
+/**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS  & SUTHERLAND  DISCLAIMS  ALL  WARRANTIES  WITH  REGARD  TO    **/
-/**    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILI-    **/
-/**    TY AND FITNESS, IN NO EVENT SHALL EVANS &  SUTHERLAND  BE  LIABLE    **/
-/**    FOR  ANY  SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY  DAM-    **/
-/**    AGES  WHATSOEVER RESULTING FROM  LOSS OF USE,  DATA  OR  PROFITS,    **/
-/**    WHETHER   IN  AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS    **/
-/**    ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE  OR PER-    **/
-/**    FORMANCE OF THIS SOFTWARE.                                           **/
+/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
+/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
+/**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
+/**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
+/**    OR PERFORMANCE OF THIS SOFTWARE.                                     **/
 /*****************************************************************************/
+
 
 /**********************************************************************
  *
- * $Header: list.c,v 1.9 88/10/13 07:19:06 toml Exp $
+ * $XConsortium: list.c,v 1.18 90/03/13 15:28:51 jim Exp $
  *
  * TWM code to deal with the name lists for the NoTitle list and
  * the AutoRaise list
@@ -34,30 +37,16 @@
  *
  **********************************************************************/
 
-#ifndef lint
+#if !defined(lint) && !defined(SABER)
 static char RCSinfo[]=
-"$Header: list.c,v 1.9 88/10/13 07:19:06 toml Exp $";
-#endif lint
+"$XConsortium: list.c,v 1.18 90/03/13 15:28:51 jim Exp $";
+#endif
 
 #include <stdio.h>
 #include "twm.h"
+#include "screen.h"
 #include "gram.h"
-
-typedef struct name_list name_list;
-
-struct name_list
-{
-    name_list *next;		/* pointer to the next name */
-    char *name;			/* the name of the window */
-    char *ptr;			/* list dependent data */
-};
-
-name_list *NoTitle = NULL;	/* list of window names with no title bar */
-name_list *AutoRaise = NULL;	/* list of window names to auto-raise */
-name_list *Icons = NULL;	/* list of window names and icons */
-name_list *NoHighlight = NULL;	/* list of windows no to highlight */
-name_list *DontIconify = NULL;	/* don't iconify by unmapping */
-name_list *IconMgrNoShow = NULL;/* don't show in the icon manager */
+#include "list.h"
 
 /***********************************************************************
  *
@@ -65,7 +54,7 @@ name_list *IconMgrNoShow = NULL;/* don't show in the icon manager */
  *	AddToList - add a window name to the appropriate list
  *
  *  Inputs:
- *	list	- a #define to identify the list
+ *	list	- the address of the pointer to the head of a list
  *	name	- a pointer to the name of the window 
  *	ptr	- pointer to list dependent data
  *
@@ -79,61 +68,30 @@ name_list *IconMgrNoShow = NULL;/* don't show in the icon manager */
  */
 
 void
-AddToList(list, name, ptr)
-int list;
+AddToList(list_head, name, ptr)
+name_list **list_head;
 char *name;
 char *ptr;
 {
     name_list *nptr;
 
+    if (!list_head) return;	/* ignore empty inserts */
+
     nptr = (name_list *)malloc(sizeof(name_list));
     if (nptr == NULL)
     {
-	fprintf(stderr, "twm: out of memory\n");
+	twmrc_error_prefix();
+	fprintf (stderr, "unable to allocate %d bytes for name_list\n",
+		 sizeof(name_list));
 	Done();
     }
 
+    nptr->next = *list_head;
     nptr->name = name;
-
-    switch (list)
-    {
-    case ICONMGR_NOSHOW:
-	nptr->next = IconMgrNoShow;
-	nptr->ptr = (char *)TRUE;
-	IconMgrNoShow = nptr;
-	break;
-
-    case NO_HILITE:
-	nptr->next = NoHighlight;
-	nptr->ptr = (char *)TRUE;
-	NoHighlight = nptr;
-	break;
-
-    case AUTO_RAISE:
-	nptr->next = AutoRaise;
-	nptr->ptr = (char *)TRUE;
-	AutoRaise = nptr;
-	break;
-
-    case NO_TITLE:
-	nptr->next = NoTitle;
-	nptr->ptr = (char *)TRUE;
-	NoTitle = nptr;
-	break;
-
-    case ICONS:
-	nptr->next = Icons;
-	nptr->ptr = ptr;	/* this is the pixmap */
-	Icons = nptr;
-	break;
-
-    case DONT_ICONIFY_BY_UNMAPPING:
-	nptr->next = DontIconify;
-	nptr->ptr = (char *)TRUE;
-	DontIconify = nptr;
-	break;
-    }
-}
+    nptr->namelen = strlen(name);
+    nptr->ptr = (ptr == NULL) ? (char *)TRUE : ptr;
+    *list_head = nptr;
+}    
 
 /***********************************************************************
  *
@@ -145,7 +103,7 @@ char *ptr;
  *	or class was not found in the list
  *
  *  Inputs:
- *	list	- a #define to identify the list
+ *	list	- a pointer to the head of a list
  *	name	- a pointer to the name to look for
  *	class	- a pointer to the class to look for
  *
@@ -153,58 +111,144 @@ char *ptr;
  */
 
 char *
-LookInList(list, name, class)
-int list;
+LookInList(list_head, name, class)
+name_list *list_head;
 char *name;
 XClassHint *class;
 {
-    name_list *l;
     name_list *nptr;
 
-    switch (list)
+    /* look for the name first */
+    for (nptr = list_head; nptr != NULL; nptr = nptr->next)
     {
-    case ICONMGR_NOSHOW:
-	l = IconMgrNoShow;
-	break;
-
-    case NO_HILITE:
-	l = NoHighlight;
-	break;
-
-    case AUTO_RAISE:
-	l = AutoRaise;
-	break;
-
-    case NO_TITLE:
-	l = NoTitle;
-	break;
-
-    case ICONS:
-	l = Icons;
-	break;
-
-    case DONT_ICONIFY_BY_UNMAPPING:
-	l = DontIconify;
-	break;
+	if (strncmp(name, nptr->name, nptr->namelen) == 0)
+	    return (nptr->ptr);
     }
 
-    for (nptr = l; nptr != NULL; nptr = nptr->next)
+    if (class)
     {
-	int len;
+	/* look for the res_name next */
+	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
+	{
+	    if (strncmp(class->res_name, nptr->name, nptr->namelen) == 0)
+		return (nptr->ptr);
+	}
 
-	len = strlen(nptr->name);
-	if (strncmp(name, nptr->name, len) == 0 ||
-	    (class && strncmp(class->res_name, nptr->name, len) == 0) ||
-	    (class && strncmp(class->res_class, nptr->name, len) == 0))
-	    return (nptr->ptr);
+	/* finally look for the res_class */
+	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
+	{
+	    if (strncmp(class->res_class, nptr->name, nptr->namelen) == 0)
+		return (nptr->ptr);
+	}
     }
     return (NULL);
 }
 
 char *
-LookInNameList(list, name)
-int list;
+LookInNameList(list_head, name)
+name_list *list_head;
 char *name;
 {
-    return (LookInList(list, name, NULL));
+    return (LookInList(list_head, name, NULL));
+}
+
+/***********************************************************************
+ *
+ *  Procedure:
+ *	GetFromList - look through a list for a window name, or class
+ *
+ *  Returned Value:
+ *	TRUE if the name was found
+ *	FALSE if the name was not found
+ *
+ *  Inputs:
+ *	list	- a pointer to the head of a list
+ *	name	- a pointer to the name to look for
+ *	class	- a pointer to the class to look for
+ *
+ *  Outputs:
+ *	ptr	- fill in the list value if the name was found
+ *
+ ***********************************************************************
+ */
+
+int GetColorFromList(list_head, name, class, ptr)
+name_list *list_head;
+char *name;
+XClassHint *class;
+Pixel *ptr;
+{
+    int save;
+    name_list *nptr;
+
+    for (nptr = list_head; nptr != NULL; nptr = nptr->next)
+    {
+	int len;
+
+	len = strlen(nptr->name);
+	if (strncmp(name, nptr->name, len) == 0)
+	{
+	    save = Scr->FirstTime;
+	    Scr->FirstTime = TRUE;
+	    GetColor(Scr->Monochrome, ptr, nptr->ptr);
+	    Scr->FirstTime = save;
+	    return (TRUE);
+	}
+    }
+    if (class)
+    {
+	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
+	{
+	    int len;
+
+	    len = strlen(nptr->name);
+	    if (strncmp(class->res_name, nptr->name, len) == 0)
+	    {
+		save = Scr->FirstTime;
+		Scr->FirstTime = TRUE;
+		GetColor(Scr->Monochrome, ptr, nptr->ptr);
+		Scr->FirstTime = save;
+		return (TRUE);
+	    }
+	}
+
+	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
+	{
+	    int len;
+
+	    len = strlen(nptr->name);
+	    if (strncmp(class->res_class, nptr->name, len) == 0)
+	    {
+		save = Scr->FirstTime;
+		Scr->FirstTime = TRUE;
+		GetColor(Scr->Monochrome, ptr, nptr->ptr);
+		Scr->FirstTime = save;
+		return (TRUE);
+	    }
+	}
+    }
+    return (FALSE);
+}
+
+/***********************************************************************
+ *
+ *  Procedure:
+ *	FreeList - free up a list
+ *
+ ***********************************************************************
+ */
+
+FreeList(list)
+name_list **list;
+{
+    name_list *nptr;
+    name_list *tmp;
+
+    for (nptr = *list; nptr != NULL; )
+    {
+	tmp = nptr->next;
+	free((char *) nptr);
+	nptr = tmp;
+    }
+    *list = NULL;
 }

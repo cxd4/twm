@@ -1,6 +1,8 @@
 /*****************************************************************************/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
+/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
+/**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
 /**                                                                         **/
@@ -9,23 +11,24 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    name  of Evans & Sutherland  not be used in advertising or publi-    **/
-/**    city pertaining to distribution  of the software without  specif-    **/
-/**    ic, written prior permission.                                        **/
+/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    in publicity pertaining to distribution of the  software  without    **/
+/**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS  & SUTHERLAND  DISCLAIMS  ALL  WARRANTIES  WITH  REGARD  TO    **/
-/**    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILI-    **/
-/**    TY AND FITNESS, IN NO EVENT SHALL EVANS &  SUTHERLAND  BE  LIABLE    **/
-/**    FOR  ANY  SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY  DAM-    **/
-/**    AGES  WHATSOEVER RESULTING FROM  LOSS OF USE,  DATA  OR  PROFITS,    **/
-/**    WHETHER   IN  AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS    **/
-/**    ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE  OR PER-    **/
-/**    FORMANCE OF THIS SOFTWARE.                                           **/
+/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
+/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
+/**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
+/**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
+/**    OR PERFORMANCE OF THIS SOFTWARE.                                     **/
 /*****************************************************************************/
+
 
 /***********************************************************************
  *
- * $Header: util.c,v 1.2 88/10/15 19:12:02 jim Exp $
+ * $XConsortium: util.c,v 1.39 90/03/16 12:06:46 jim Exp $
  *
  * utility routines for twm
  *
@@ -33,151 +36,24 @@
  *
  ***********************************************************************/
 
-#ifndef lint
+#if !defined(lint) && !defined(SABER)
 static char RCSinfo[]=
-"$Header: util.c,v 1.2 88/10/15 19:12:02 jim Exp $";
+"$XConsortium: util.c,v 1.39 90/03/16 12:06:46 jim Exp $";
 #endif
 
 #include <stdio.h>
 #include "twm.h"
 #include "util.h"
 #include "gram.h"
-#include "iconify.bm"
+#include "screen.h"
+#include <X11/Xos.h>
+#include <X11/Xatom.h>
+#include <X11/Xmu/Drawing.h>
+#include <X11/Xmu/CharSet.h>
 
-int ZoomCount = 8;		/* number of outlines to draw while zooming */
-
-typedef struct ListRoot
-{
-    struct WList *first;
-    struct WList *last;
-    int count;
-} ListRoot;
-
-int IconManagerWidth = 0;
-int IconManagerHeight = 0;
-int IconManagerX = iconify_width + 6;
-int IconManagerY = 0;
-static ListRoot WListRoot = { NULL, NULL, 0 };
-static Pixmap Pm = NULL;
-
-WList *
-AddIconManager(tmp_win)
-TwmWindow *tmp_win;
-{
-    WList *tmp;
-    int h;
-    unsigned long valuemask;		/* mask for create windows */
-    XSetWindowAttributes attributes;	/* attributes for create windows */
-
-    if (tmp_win == IconManagerPtr)
-	return NULL;
-
-    if (LookInList(ICONMGR_NOSHOW, tmp_win->full_name, &tmp_win->class))
-	return NULL;
-
-    tmp = (WList *) malloc(sizeof(WList));
-
-    if (WListRoot.first == NULL)
-    {
-	WListRoot.first = tmp;
-	tmp->prev = NULL;
-    }
-    else
-    {
-	WListRoot.last->next = tmp;
-	tmp->prev = WListRoot.last;
-    }
-    WListRoot.last = tmp;
-    tmp->next = NULL;
-
-    tmp->twm = tmp_win;
-
-    h = IconManagerFont.height + 4;
-    if (h < (iconify_height + 2))
-	h = iconify_height + 2;
-
-    IconManagerHeight = h * WListRoot.count;
-    tmp->w = XCreateSimpleWindow(dpy, IconManager,
-	0, IconManagerHeight, 1000, h, 0,
-	IconManagerC.fore, IconManagerC.back);
-    XSelectInput(dpy, tmp->w, ButtonPressMask | ExposureMask);
-    XMapWindow(dpy, tmp->w);
-    
-    if (Pm == NULL)
-    {
-	Pm = MakePixmap(tmp->w, IconManagerGC,
-	    iconify_bits, iconify_width, iconify_height);
-    }
-    valuemask = CWEventMask | CWBackPixmap;
-    attributes.background_pixmap = Pm;
-    attributes.event_mask = ButtonPressMask;
-
-    tmp->icon = XCreateWindow(dpy, tmp->w,
-	1, (h - iconify_height)/2,
-	iconify_width, iconify_height,
-	0, d_depth, CopyFromParent,
-	d_visual, valuemask, &attributes);
-
-    XDefineCursor(dpy, tmp->icon, ButtonCursor);
-
-    WListRoot.count += 1;
-    IconManagerHeight = h * WListRoot.count;
-
-    XResizeWindow(dpy, IconManager, IconManagerWidth, IconManagerHeight);
-    if (IconManagerPtr != NULL)
-	SetupWindow(IconManagerPtr,
-	    IconManagerPtr->frame_x,
-	    IconManagerPtr->frame_y,
-	    IconManagerPtr->frame_width,
-	    (h * WListRoot.count) + IconManagerPtr->title_height);
-    XSaveContext(dpy, tmp->w, IconManagerContext, tmp);
-
-    return (tmp);
-}
-
-RemoveIconManager(tmp_win)
-TwmWindow *tmp_win;
-{
-    WList *tmp;
-    int h, i;
-
-    if (tmp_win->list == NULL)
-	return;
-
-    tmp = tmp_win->list;
-    if (tmp->prev == NULL)
-	WListRoot.first = tmp->next;
-    else
-	tmp->prev->next = tmp->next;
-
-    if (tmp->next == NULL)
-	WListRoot.last = tmp->prev;
-    else
-	tmp->next->prev = tmp->prev;
-    
-    XDeleteContext(dpy, tmp->w, IconManagerContext);
-    XDestroyWindow(dpy, tmp->w);
-    XDestroyWindow(dpy, tmp->icon);
-    WListRoot.count -= 1;
-    free(tmp);
-
-    h = IconManagerFont.height + 4;
-    IconManagerHeight = h * WListRoot.count;
-    if (h < (iconify_height + 2))
-	h = iconify_height + 2;
-
-    for (i = 0, tmp = WListRoot.first; tmp != NULL; i++, tmp = tmp->next)
-    {
-	XMoveWindow(dpy, tmp->w, 0, i * h);
-    }
-
-    if (IconManagerPtr != NULL)
-	SetupWindow(IconManagerPtr,
-	    IconManagerPtr->frame_x,
-	    IconManagerPtr->frame_y,
-	    IconManagerPtr->frame_width,
-	    IconManagerHeight + IconManagerPtr->title_height);
-}
+static Pixmap CreateXLogoPixmap(), CreateResizePixmap();
+static Pixmap CreateQuestionPixmap(), CreateMenuPixmap();
+int HotX, HotY;
 
 /***********************************************************************
  *
@@ -190,137 +66,124 @@ TwmWindow *tmp_win;
  *	y	    - upper left y coordinate
  *	width	    - the width of the rectangle
  *	height	    - the height of the rectangle
+ *      bw          - the border width of the frame
+ *      th          - title height
  *
  ***********************************************************************
  */
 
-void
-MoveOutline(root, x, y, width, height)
+/* ARGSUSED */
+void MoveOutline(root, x, y, width, height, bw, th)
     Window root;
-    int x, y, width, height;
+    int x, y, width, height, bw, th;
 {
     static int	lastx = 0;
     static int	lasty = 0;
     static int	lastWidth = 0;
     static int	lastHeight = 0;
-    int		xl, xr, yt, yb;
+    static int	lastBW = 0;
+    static int	lastTH = 0;
+    int		xl, xr, yt, yb, xinnerl, xinnerr, yinnert, yinnerb;
     int		xthird, ythird;
-    XSegment	outline[16];
-    XSegment	*r = outline;
+    XSegment	outline[18];
+    register XSegment	*r;
 
-    if (x == lastx && y == lasty && width == lastWidth && height == lastHeight)
+    if (x == lastx && y == lasty && width == lastWidth && height == lastHeight
+	&& lastBW == bw && th == lastTH)
 	return;
     
-    xthird = lastWidth/3;
-    ythird = lastHeight/3;
-    xl = lastx;
-    xr = lastx + lastWidth - 1;
-    yt = lasty;
-    yb = lasty + lastHeight - 1;
+    r = outline;
 
-    if (lastWidth || lastHeight)
-    {
-	r->x1 = xl;
-	r->y1 = yt;
-	r->x2 = xr;
-	r++->y2 = yt;
-
-	r->x1 = xl;
-	r->y1 = yb;
-	r->x2 = xr;
-	r++->y2 = yb;
-
-	r->x1 = xl;
-	r->y1 = yt;
-	r->x2 = xl;
-	r++->y2 = yb;
-
-	r->x1 = xr;
-	r->y1 = yt;
-	r->x2 = xr;
-	r++->y2 = yb;
-
-	r->x1 = xl + xthird;
-	r->y1 = yt;
-	r->x2 = r->x1;
-	r++->y2 = yb;
-
-	r->x1 = xl + (2 * xthird);
-	r->y1 = yt;
-	r->x2 = r->x1;
-	r++->y2 = yb;
-
-	r->x1 = xl;
-	r->y1 = yt + ythird;
-	r->x2 = xr;
-	r->y2 = r->y1;
-	r++;
-
-	r->x1 = xl;
-	r->y1 = yt + (2 * ythird);
-	r->x2 = xr;
-	r->y2 = r->y1;
-	r++;
+#define DRAWIT() \
+    if (lastWidth || lastHeight)			\
+    {							\
+	xl = lastx;					\
+	xr = lastx + lastWidth - 1;			\
+	yt = lasty;					\
+	yb = lasty + lastHeight - 1;			\
+	xinnerl = xl + lastBW;				\
+	xinnerr = xr - lastBW;				\
+	yinnert = yt + lastTH + lastBW;			\
+	yinnerb = yb - lastBW;				\
+	xthird = (xinnerr - xinnerl) / 3;		\
+	ythird = (yinnerb - yinnert) / 3;		\
+							\
+	r->x1 = xl;					\
+	r->y1 = yt;					\
+	r->x2 = xr;					\
+	r->y2 = yt;					\
+	r++;						\
+							\
+	r->x1 = xl;					\
+	r->y1 = yb;					\
+	r->x2 = xr;					\
+	r->y2 = yb;					\
+	r++;						\
+							\
+	r->x1 = xl;					\
+	r->y1 = yt;					\
+	r->x2 = xl;					\
+	r->y2 = yb;					\
+	r++;						\
+							\
+	r->x1 = xr;					\
+	r->y1 = yt;					\
+	r->x2 = xr;					\
+	r->y2 = yb;					\
+	r++;						\
+							\
+	r->x1 = xinnerl + xthird;			\
+	r->y1 = yinnert;				\
+	r->x2 = r->x1;					\
+	r->y2 = yinnerb;				\
+	r++;						\
+							\
+	r->x1 = xinnerl + (2 * xthird);			\
+	r->y1 = yinnert;				\
+	r->x2 = r->x1;					\
+	r->y2 = yinnerb;				\
+	r++;						\
+							\
+	r->x1 = xinnerl;				\
+	r->y1 = yinnert + ythird;			\
+	r->x2 = xinnerr;				\
+	r->y2 = r->y1;					\
+	r++;						\
+							\
+	r->x1 = xinnerl;				\
+	r->y1 = yinnert + (2 * ythird);			\
+	r->x2 = xinnerr;				\
+	r->y2 = r->y1;					\
+	r++;						\
+							\
+	if (lastTH != 0) {				\
+	    r->x1 = xl;					\
+	    r->y1 = yt + lastTH;			\
+	    r->x2 = xr;					\
+	    r->y2 = r->y1;				\
+	    r++;					\
+	}						\
     }
+
+    /* undraw the old one, if any */
+    DRAWIT ();
 
     lastx = x;
     lasty = y;
     lastWidth = width;
     lastHeight = height;
-    xthird = lastWidth/3;
-    ythird = lastHeight/3;
-    xl = lastx;
-    xr = lastx + lastWidth - 1;
-    yt = lasty;
-    yb = lasty + lastHeight - 1;
+    lastBW = bw;
+    lastTH = th;
 
-    if (lastWidth || lastHeight)
-    {
-	r->x1 = xl;
-	r->y1 = yt;
-	r->x2 = xr;
-	r++->y2 = yt;
+    /* draw the new one, if any */
+    DRAWIT ();
 
-	r->x1 = xl;
-	r->y1 = yb;
-	r->x2 = xr;
-	r++->y2 = yb;
+#undef DRAWIT
 
-	r->x1 = xl;
-	r->y1 = yt;
-	r->x2 = xl;
-	r++->y2 = yb;
 
-	r->x1 = xr;
-	r->y1 = yt;
-	r->x2 = xr;
-	r++->y2 = yb;
-
-	r->x1 = xl + xthird;
-	r->y1 = yt;
-	r->x2 = r->x1;
-	r++->y2 = yb;
-
-	r->x1 = xl + (2 * xthird);
-	r->y1 = yt;
-	r->x2 = r->x1;
-	r++->y2 = yb;
-
-	r->x1 = xl;
-	r->y1 = yt + ythird;
-	r->x2 = xr;
-	r->y2 = r->y1;
-	r++;
-
-	r->x1 = xl;
-	r->y1 = yt + (2 * ythird);
-	r->x2 = xr;
-	r->y2 = r->y1;
-	r++;
-    }
     if (r != outline)
     {
-	XDrawSegments(dpy, root, DrawGC, outline, r - outline);
+	XDrawSegments(dpy, root, Scr->DrawGC, outline, r - outline);
     }
 }
 
@@ -338,184 +201,44 @@ MoveOutline(root, x, y, width, height)
 
 void
 Zoom(wf, wt)
+    Window wf, wt;
 {
-    int fx, fy, fw, fh;
-    int tx, ty, tw, th;
-    int xl, yt, xr, yb;
-    int dx, dy, dw, dh;
-    int w, h, i;
-    XSegment	outline[4];
+    int fx, fy, tx, ty;			/* from, to */
+    unsigned int fw, fh, tw, th;	/* from, to */
+    long dx, dy, dw, dh;
+    long z;
+    int j;
 
-    if (!DoZoom)
-	return;
+    if (!Scr->DoZoom || Scr->ZoomCount < 1) return;
 
-    XGetGeometry(dpy, wf, &JunkRoot, &fx, &fy, &fw, &fh, &JunkBW, &JunkDepth);
-    XGetGeometry(dpy, wt, &JunkRoot, &tx, &ty, &tw, &th, &JunkBW, &JunkDepth);
+    if (wf == None || wt == None) return;
 
-    dx = (tx - fx) / ZoomCount;
-    dy = (ty - fy) / ZoomCount;
-    dw = (tw - fw) / ZoomCount;
-    dh = (th - fh) / ZoomCount;
+    XGetGeometry (dpy, wf, &JunkRoot, &fx, &fy, &fw, &fh, &JunkBW, &JunkDepth);
+    XGetGeometry (dpy, wt, &JunkRoot, &tx, &ty, &tw, &th, &JunkBW, &JunkDepth);
 
-    xl = fx;
-    yt = fy;
-    xr = fx + fw;
-    yb = fy + fh;
-    w = fw;
-    h = fh;
+    dx = ((long) (tx - fx));	/* going from -> to */
+    dy = ((long) (ty - fy));	/* going from -> to */
+    dw = ((long) (tw - fw));	/* going from -> to */
+    dh = ((long) (th - fh));	/* going from -> to */
+    z = (long) (Scr->ZoomCount + 1);
 
-    for (i = 0; i < ZoomCount; i++)
-    {
-	outline[0].x1 = xl;
-	outline[0].y1 = yt;
-	outline[0].x2 = xr;
-	outline[0].y2 = yt;
+    for (j = 0; j < 2; j++) {
+	long i;
 
-	outline[1].x1 = xr;
-	outline[1].y1 = yt;
-	outline[1].x2 = xr;
-	outline[1].y2 = yb;
-
-	outline[2].x1 = xr;
-	outline[2].y1 = yb;
-	outline[2].x2 = xl;
-	outline[2].y2 = yb;
-
-	outline[3].x1 = xl;
-	outline[3].y1 = yb;
-	outline[3].x2 = xl;
-	outline[3].y2 = yt;
-
-	XDrawSegments(dpy, Root, DrawGC, outline, 4);
-
-	w += dw;
-	h += dh;
-	xl += dx;
-	yt += dy;
-	xr = xl + w;
-	yb = yt + h;
-    }
-
-    xl = fx;
-    yt = fy;
-    xr = fx + fw;
-    yb = fy + fh;
-    w = fw;
-    h = fh;
-
-    for (i = 0; i < ZoomCount; i++)
-    {
-	outline[0].x1 = xl;
-	outline[0].y1 = yt;
-	outline[0].x2 = xr;
-	outline[0].y2 = yt;
-
-	outline[1].x1 = xr;
-	outline[1].y1 = yt;
-	outline[1].x2 = xr;
-	outline[1].y2 = yb;
-
-	outline[2].x1 = xr;
-	outline[2].y1 = yb;
-	outline[2].x2 = xl;
-	outline[2].y2 = yb;
-
-	outline[3].x1 = xl;
-	outline[3].y1 = yb;
-	outline[3].x2 = xl;
-	outline[3].y2 = yt;
-
-	XDrawSegments(dpy, Root, DrawGC, outline, 4);
-
-	w += dw;
-	h += dh;
-	xl += dx;
-	yt += dy;
-	xr = xl + w;
-	yb = yt + h;
+	XDrawRectangle (dpy, Scr->Root, Scr->DrawGC, fx, fy, fw, fh);
+	for (i = 1; i < z; i++) {
+	    int x = fx + (int) ((dx * i) / z);
+	    int y = fy + (int) ((dy * i) / z);
+	    unsigned width = (unsigned) (((long) fw) + (dw * i) / z);
+	    unsigned height = (unsigned) (((long) fh) + (dh * i) / z);
+	
+	    XDrawRectangle (dpy, Scr->Root, Scr->DrawGC,
+			    x, y, width, height);
+	}
+	XDrawRectangle (dpy, Scr->Root, Scr->DrawGC, tx, ty, tw, th);
     }
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	MakeCenteredPixmap - make a pixmap centered in a space
- *
- *  Returned Value:
- *	pid	- the pixmap id
- *
- *  Inputs:
- *	w	- the window to associate the pixmap with
- *	gc	- the graphics context to use
- *	width	- the width of the pixmap to create
- *	height  - the height of the pixmap to create
- *	data	- pointer to the pixmap data
- *	pwidth	- the width of the pixmap
- *	pheight	- the height of the pixmap
- *
- ***********************************************************************
- */
-
-Pixmap
-MakeCenteredPixmap(w, gc, width, height, data, pwidth, pheight)
-    Drawable w;
-    GC gc;
-    int width, height;
-    short *data;
-    int pwidth, pheight;
-{
-    XImage ximage;
-    Pixmap pid;
-    int dx, dy;
-
-    pid = XCreatePixmap(dpy, w, width, height, d_depth);
-
-    ximage.height = pheight;
-    ximage.width = pwidth;
-    ximage.xoffset = 0;
-    ximage.format = XYBitmap;
-    ximage.data = (char *) data;
-    ximage.byte_order = LSBFirst;
-    ximage.bitmap_unit = 16;
-    ximage.bitmap_bit_order = LSBFirst;
-    ximage.bitmap_pad = 16;
-    ximage.bytes_per_line = (pwidth + 15) / 16 * 2;
-    ximage.depth = 1;
-
-    dx = (width - pwidth) / 2;
-    dy = (height - pheight) / 2;
-
-    XPutImage(dpy, pid, gc, &ximage, 0, 0, dx, dy, pwidth, pheight);
-    return (pid);
-}
-
-/***********************************************************************
- *
- *  Procedure:
- *	MakePixmap - make a pixmap
- *
- *  Returned Value:
- *	pid	- the pixmap id
- *
- *  Inputs:
- *	w	- the window to associate the pixmap with
- *	gc	- the graphics context to use
- *	data	- pointer to the pixmap data
- *	width	- the width of the pixmap
- *	height	- the height of the pixmap
- *
- ***********************************************************************
- */
-
-Pixmap
-MakePixmap(w, gc, data, width, height)
-    Drawable w;
-    GC gc;
-    short *data;
-    int width, height;
-{
-    return MakeCenteredPixmap(w, gc, width, height, data, width, height);
-}
 
 /***********************************************************************
  *
@@ -538,13 +261,18 @@ char *name;
 {
     char *newname;
 
-    if (name[0] != '~')
-	return (name);
+    if (name[0] != '~') return name;
 
-    newname = (char *)malloc(HomeLen + strlen(name) + 2);
-    sprintf(newname, "%s/%s", Home, &name[1]);
+    newname = (char *) malloc (HomeLen + strlen(name) + 2);
+    if (!newname) {
+	fprintf (stderr, 
+		 "%s:  unable to allocate %d bytes to expand filename %s/%s\n",
+		 ProgramName, HomeLen + strlen(name) + 2, Home, &name[1]);
+    } else {
+	(void) sprintf (newname, "%s/%s", Home, &name[1]);
+    }
 
-    return (newname);
+    return newname;
 }
 
 /***********************************************************************
@@ -562,21 +290,22 @@ void
 GetUnknownIcon(name)
 char *name;
 {
-    UnknownPm = GetBitmap(name);
-    if (UnknownPm != NULL)
+    if ((Scr->UnknownPm = GetBitmap(name)) != None)
     {
-	XGetGeometry(dpy, UnknownPm, &JunkRoot, &JunkX, &JunkY,
-	    &UnknownWidth, &UnknownHeight, &JunkBW, &JunkDepth);
+	XGetGeometry(dpy, Scr->UnknownPm, &JunkRoot, &JunkX, &JunkY,
+	    (unsigned int *)&Scr->UnknownWidth, (unsigned int *)&Scr->UnknownHeight, &JunkBW, &JunkDepth);
     }
 }
 
 /***********************************************************************
  *
  *  Procedure:
- *	GetBitmap - read in a bitmap file
+ *	FindBitmap - read in a bitmap file and return size
  *
  *  Returned Value:
  *	the pixmap associated with the bitmap
+ *      widthp	- pointer to width of bitmap
+ *      heightp	- pointer to height of bitmap
  *
  *  Inputs:
  *	name	- the filename to read
@@ -584,95 +313,253 @@ char *name;
  ***********************************************************************
  */
 
-Pixmap
-GetBitmap(name)
-char *name;
+Pixmap FindBitmap (name, widthp, heightp)
+    char *name;
+    unsigned int *widthp, *heightp;
 {
     char *bigname;
-    int status, junk_hotx, junk_hoty;
     Pixmap pm;
 
-    if  (name == NULL)
-	return (NULL);
+    if (!name) return None;
 
-    name = ExpandFilename(name);
-    bigname = name;
-
-    status = XReadBitmapFile(dpy, Root, bigname, &JunkWidth,
-	&JunkHeight, &pm, &junk_hotx, &junk_hoty);
-
-    if (status != BitmapSuccess && IconDirectory && name[0] != '/')
-    {
-	bigname = (char *)malloc(strlen(name) + strlen(IconDirectory) + 2);
-	sprintf(bigname, "%s/%s", IconDirectory, name);
-	status = XReadBitmapFile(dpy, Root, bigname, &JunkWidth,
-	    &JunkHeight, &pm, &junk_hotx, &junk_hoty);
+    /*
+     * Names of the form :name refer to hardcoded images that are scaled to
+     * look nice in title buttons.  Eventually, it would be nice to put in a
+     * menu symbol as well....
+     */
+    if (name[0] == ':') {
+	int i;
+	static struct {
+	    char *name;
+	    Pixmap (*proc)();
+	} pmtab[] = {
+	    { TBPM_XLOGO,	CreateXLogoPixmap },
+	    { TBPM_ICONIFY,	CreateXLogoPixmap },
+	    { TBPM_RESIZE,	CreateResizePixmap },
+	    { TBPM_QUESTION,	CreateQuestionPixmap },
+	    { TBPM_MENU,	CreateMenuPixmap },  /* XXX - don't doc, niy */
+	};
+	
+	for (i = 0; i < (sizeof pmtab)/(sizeof pmtab[0]); i++) {
+	    if (XmuCompareISOLatin1 (pmtab[i].name, name) == 0)
+	      return (*pmtab[i].proc) (widthp, heightp);
+	}
+	fprintf (stderr, "%s:  no such built-in bitmap \"%s\"\n",
+		 ProgramName, name);
+	return None;
     }
 
-    if (status != BitmapSuccess && name[0] != '/')
-    {
-	bigname = (char *)malloc(strlen(name) + strlen(BITMAPS) + 2);
-	sprintf(bigname, "%s/%s", BITMAPS, name);
-	status = XReadBitmapFile(dpy, Root, bigname, &JunkWidth,
-	    &JunkHeight, &pm, &junk_hotx, &junk_hoty);
+    /*
+     * Generate a full pathname if any special prefix characters (such as ~)
+     * are used.  If the bigname is different from name, bigname will need to
+     * be freed.
+     */
+    bigname = ExpandFilename (name);
+    if (!bigname) return None;
+
+    /*
+     * look along bitmapFilePath resource same as toolkit clients
+     */
+    pm = XmuLocateBitmapFile (ScreenOfDisplay(dpy, Scr->screen), bigname,
+			      NULL, 0, widthp, heightp, &HotX, &HotY);
+    if (pm == None && Scr->IconDirectory && bigname[0] != '/') {
+	if (bigname != name) free (bigname);
+	/*
+	 * Attempt to find icon in old IconDirectory (now obsolete)
+	 */
+	bigname = (char *) malloc (strlen(name) + strlen(Scr->IconDirectory) +
+				   2);
+	if (!bigname) {
+	    fprintf (stderr,
+		     "%s:  unable to allocate memory for \"%s/%s\"\n",
+		     ProgramName, Scr->IconDirectory, name);
+	    return None;
+	}
+	(void) sprintf (bigname, "%s/%s", Scr->IconDirectory, name);
+	if (XReadBitmapFile (dpy, Scr->Root, bigname, widthp, heightp, &pm,
+			     &HotX, &HotY) != BitmapSuccess) {
+	    pm = None;
+	}
+    }
+    if (bigname != name) free (bigname);
+    if (pm == None) {
+	fprintf (stderr, "%s:  unable to find bitmap \"%s\"\n", 
+		 ProgramName, name);
     }
 
-    switch(status)
-    {
-	case BitmapSuccess:
-	    break;
-
-	case BitmapFileInvalid:
-	    fprintf(stderr, ".twmrc: invalid bitmap file \"%s\"\n", bigname);
-	    break;
-
-	case BitmapNoMemory:
-	    fprintf(stderr, ".twmrc: out of memory \"%s\"\n", bigname);
-	    break;
-
-	case BitmapOpenFailed:
-	    fprintf(stderr, ".twmrc: failed to open bitmap file \"%s\"\n",
-		bigname);
-	    break;
-
-	default:
-	    fprintf(stderr,".twmrc: bitmap error = 0x%x on file \"%s\"\n",
-		status, bigname);
-	    break;
-    }
-
-    if (status != BitmapSuccess)
-	return (NULL);
-
-    return (pm);
+    return pm;
 }
 
-int
+Pixmap GetBitmap (name)
+    char *name;
+{
+    return FindBitmap (name, &JunkWidth, &JunkHeight);
+}
+
+
+InsertRGBColormap (a, maps, nmaps, replace)
+    Atom a;
+    XStandardColormap *maps;
+    int nmaps;
+    Bool replace;
+{
+    StdCmap *sc = NULL;
+
+    if (replace) {			/* locate existing entry */
+	for (sc = Scr->StdCmapInfo.head; sc; sc = sc->next) {
+	    if (sc->atom == a) break;
+	}
+    }
+
+    if (!sc) {				/* no existing, allocate new */
+	sc = (StdCmap *) malloc (sizeof (StdCmap));
+	if (!sc) {
+	    fprintf (stderr, "%s:  unable to allocate %d bytes for StdCmap\n",
+		     ProgramName, sizeof (StdCmap));
+	    return;
+	}
+    }
+
+    if (replace) {			/* just update contents */
+	if (sc->maps) XFree ((char *) maps);
+	if (sc == Scr->StdCmapInfo.mru) Scr->StdCmapInfo.mru = NULL;
+    } else {				/* else appending */
+	sc->next = NULL;
+	sc->atom = a;
+	if (Scr->StdCmapInfo.tail) {
+	    Scr->StdCmapInfo.tail->next = sc;
+	} else {
+	    Scr->StdCmapInfo.head = sc;
+	}
+	Scr->StdCmapInfo.tail = sc;
+    }
+    sc->nmaps = nmaps;
+    sc->maps = maps;
+
+    return;
+}
+
+RemoveRGBColormap (a)
+    Atom a;
+{
+    StdCmap *sc, *prev;
+
+    prev = NULL;
+    for (sc = Scr->StdCmapInfo.head; sc; sc = sc->next) {  
+	if (sc->atom == a) break;
+	prev = sc;
+    }
+    if (sc) {				/* found one */
+	if (sc->maps) XFree ((char *) sc->maps);
+	if (prev) prev->next = sc->next;
+	if (Scr->StdCmapInfo.head == sc) Scr->StdCmapInfo.head = sc->next;
+	if (Scr->StdCmapInfo.tail == sc) Scr->StdCmapInfo.tail = prev;
+	if (Scr->StdCmapInfo.mru == sc) Scr->StdCmapInfo.mru = NULL;
+    }
+    return;
+}
+
+LocateStandardColormaps()
+{
+    Atom *atoms;
+    int natoms;
+    int i;
+
+    atoms = XListProperties (dpy, Scr->Root, &natoms);
+    for (i = 0; i < natoms; i++) {
+	XStandardColormap *maps = NULL;
+	int nmaps;
+
+	if (XGetRGBColormaps (dpy, Scr->Root, &maps, &nmaps, atoms[i])) {
+	    /* if got one, then append to current list */
+	    InsertRGBColormap (atoms[i], maps, nmaps, False);
+	}
+    }
+    if (atoms) XFree ((char *) atoms);
+    return;
+}
+
 GetColor(kind, what, name)
 int kind;
-int *what;
+Pixel *what;
 char *name;
 {
     XColor color, junkcolor;
+    Status stat = 0;
+    Colormap cmap = Scr->TwmRoot.cmaps.cwins[0]->colormap->c;
 
 #ifndef TOM
-    if (!FirstTime)
+    if (!Scr->FirstTime)
 	return;
 #endif
 
-    if (Monochrome != kind)
+    if (Scr->Monochrome != kind)
 	return;
 
-    if (!XParseColor(dpy, CMap, name, &color))
+    /*
+     * small hack to avoid extra roundtrip for color allocation
+     */
+    if (!((name[0] == '#')
+	  ? ((stat = XParseColor (dpy, cmap, name, &color)) &&
+	     XAllocColor (dpy, cmap, &color))
+	  : XAllocNamedColor (dpy, cmap, name, &color, &junkcolor)))
     {
-	fprintf(stderr, "twm: invalid color \"%s\"\n", name);
-	return;
-    }
+	/* if we could not allocate the color, let's see if this is a
+	 * standard colormap
+	 */
+	XStandardColormap *stdcmap = NULL;
 
-    if (!XAllocColor(dpy, CMap, &color))
-    {
-	fprintf(stderr, "twm: invalid color \"%s\"\n", name);
-	return;
+	/* parse the named color */
+	if (name[0] != '#')
+	    stat = XParseColor (dpy, cmap, name, &color);
+	if (!stat)
+	{
+	    fprintf (stderr, "%s:  invalid color name \"%s\"\n", 
+		     ProgramName, name);
+	    return;
+	}
+
+	/*
+	 * look through the list of standard colormaps (check cache first)
+	 */
+	if (Scr->StdCmapInfo.mru && Scr->StdCmapInfo.mru->maps &&
+	    (Scr->StdCmapInfo.mru->maps[Scr->StdCmapInfo.mruindex].colormap ==
+	     cmap)) {
+	    stdcmap = &(Scr->StdCmapInfo.mru->maps[Scr->StdCmapInfo.mruindex]);
+	} else {
+	    StdCmap *sc;
+
+	    for (sc = Scr->StdCmapInfo.head; sc; sc = sc->next) {
+		int i;
+
+		for (i = 0; i < sc->nmaps; i++) {
+		    if (sc->maps[i].colormap == cmap) {
+			Scr->StdCmapInfo.mru = sc;
+			Scr->StdCmapInfo.mruindex = i;
+			stdcmap = &(sc->maps[i]);
+			goto gotit;
+		    }
+		}
+	    }
+	}
+
+      gotit:
+	if (stdcmap) {
+            color.pixel = (stdcmap->base_pixel +
+			   ((Pixel)((color.red / 65535.0) *
+				    stdcmap->red_max + 0.5) *
+			    stdcmap->red_mult) +
+			   ((Pixel)((color.green /65535.0) *
+				    stdcmap->green_max + 0.5) *
+			    stdcmap->green_mult) +
+			   ((Pixel)((color.blue  / 65535.0) *
+				    stdcmap->blue_max + 0.5) *
+			    stdcmap->blue_mult));
+        } else {
+	    fprintf (stderr, "%s:  unable to allocate color \"%s\"\n", 
+		     ProgramName, name);
+	    return;
+	}
     }
 
     *what = color.pixel;
@@ -682,27 +569,221 @@ GetFont(font)
 MyFont *font;
 {
     char *deffontname = "fixed";
-#ifndef TOM
-    if (!FirstTime)
-	return;
-#endif
 
     if (font->font != NULL)
 	XFreeFont(dpy, font->font);
 
     if ((font->font = XLoadQueryFont(dpy, font->name)) == NULL)
     {
-	if (DefaultFont.name) {
-	    deffontname = DefaultFont.name;
+	if (Scr->DefaultFont.name) {
+	    deffontname = Scr->DefaultFont.name;
 	}
 	if ((font->font = XLoadQueryFont(dpy, deffontname)) == NULL)
 	{
-	    fprintf(stderr, "twm: couldn't open font \"%s\" or \"%s\"\n",
-		    font->name, deffontname);
+	    fprintf (stderr, "%s:  unable to open fonts \"%s\" or \"%s\"\n",
+		     ProgramName, font->name, deffontname);
 	    exit(1);
 	}
 
     }
     font->height = font->font->ascent + font->font->descent;
-    font->y = font->font->ascent + 1;
+    font->y = font->font->ascent;
+}
+
+
+/*
+ * SetFocus - separate routine to set focus to make things more understandable
+ * and easier to debug
+ */
+SetFocus (tmp_win)
+    TwmWindow *tmp_win;
+{
+    Window w = (tmp_win ? tmp_win->w : PointerRoot);
+
+#ifdef TRACE
+    if (tmp_win) {
+	printf ("Focusing on window \"%s\"\n", tmp_win->full_name);
+    } else {
+	printf ("Unfocusing; Scr->Focus was \"%s\"\n",
+		Scr->Focus ? Scr->Focus->full_name : "(nil)");
+    }
+#endif
+
+    XSetInputFocus (dpy, w, RevertToPointerRoot, CurrentTime);
+}
+
+
+#ifdef NOPUTENV
+/*
+ * define our own putenv() if the system doesn't have one.
+ * putenv(s): place s (a string of the form "NAME=value") in
+ * the environment; replacing any existing NAME.  s is placed in
+ * environment, so if you change s, the environment changes (like
+ * putenv on a sun).  Binding removed if you putenv something else
+ * called NAME.
+ */
+int
+putenv(s)
+    char *s;
+{
+    extern char *index();
+    char *v;
+    int varlen, idx;
+    extern char **environ;
+    char **newenv;
+    static int virgin = 1; /* true while "environ" is a virgin */
+
+    v = index(s, '=');
+    if(v == 0)
+	return 0; /* punt if it's not of the right form */
+    varlen = (v + 1) - s;
+
+    for (idx = 0; environ[idx] != 0; idx++) {
+	if (strncmp(environ[idx], s, varlen) == 0) {
+	    if(v[1] != 0) { /* true if there's a value */
+		environ[idx] = s;
+		return 0;
+	    } else {
+		do {
+		    environ[idx] = environ[idx+1];
+		} while(environ[++idx] != 0);
+		return 0;
+	    }
+	}
+    }
+    
+    /* add to environment (unless no value; then just return) */
+    if(v[1] == 0)
+	return 0;
+    if(virgin) {
+	register i;
+
+	newenv = (char **) malloc((unsigned) ((idx + 2) * sizeof(char*)));
+	if(newenv == 0)
+	    return -1;
+	for(i = idx-1; i >= 0; --i)
+	    newenv[i] = environ[i];
+	virgin = 0;     /* you're not a virgin anymore, sweety */
+    } else {
+	newenv = (char **) realloc((char *) environ,
+				   (unsigned) ((idx + 2) * sizeof(char*)));
+	if (newenv == 0)
+	    return -1;
+    }
+
+    environ = newenv;
+    environ[idx] = s;
+    environ[idx+1] = 0;
+    
+    return 0;
+}
+#endif /* NOPUTENV */
+
+
+static Pixmap CreateXLogoPixmap (widthp, heightp)
+    unsigned int *widthp, *heightp;
+{
+    int h = Scr->TBInfo.width - Scr->TBInfo.border * 2;
+    if (h < 0) h = 0;
+
+    *widthp = *heightp = (unsigned int) h;
+    if (Scr->tbpm.xlogo == None) {
+	GC gc, gcBack;
+
+	Scr->tbpm.xlogo = XCreatePixmap (dpy, Scr->Root, h, h, 1);
+	gc = XCreateGC (dpy, Scr->tbpm.xlogo, 0L, NULL);
+	XSetForeground (dpy, gc, 0);
+	XFillRectangle (dpy, Scr->tbpm.xlogo, gc, 0, 0, h, h);
+	XSetForeground (dpy, gc, 1);
+	gcBack = XCreateGC (dpy, Scr->tbpm.xlogo, 0L, NULL);
+	XSetForeground (dpy, gcBack, 0);
+
+	/*
+	 * draw the logo large so that it gets as dense as possible; then white
+	 * out the edges so that they look crisp
+	 */
+	XmuDrawLogo (dpy, Scr->tbpm.xlogo, gc, gcBack, -1, -1, h + 2, h + 2);
+	XDrawRectangle (dpy, Scr->tbpm.xlogo, gcBack, 0, 0, h - 1, h - 1);
+
+	/*
+	 * done drawing
+	 */
+	XFreeGC (dpy, gc);
+	XFreeGC (dpy, gcBack);
+    }
+    return Scr->tbpm.xlogo;
+}
+
+
+static Pixmap CreateResizePixmap (widthp, heightp)
+    unsigned int *widthp, *heightp;
+{
+    int h = Scr->TBInfo.width - Scr->TBInfo.border * 2;
+    if (h < 0) h = 0;
+
+    *widthp = *heightp = (unsigned int) h;
+    if (Scr->tbpm.resize == None) {
+	XSegment segs[4];
+	GC gc;
+	int w;
+
+	/*
+	 * create the pixmap
+	 */
+	Scr->tbpm.resize = XCreatePixmap (dpy, Scr->Root, h, h, 1);
+	gc = XCreateGC (dpy, Scr->tbpm.resize, 0L, NULL);
+	XSetForeground (dpy, gc, 0);
+	XFillRectangle (dpy, Scr->tbpm.resize, gc, 0, 0, h, h);
+	XSetForeground (dpy, gc, 1);
+
+	/*
+	 * draw the resize button, 
+	 */
+	w = (h * 2) / 3;
+	segs[0].x1 = w; segs[0].y1 = 0; segs[0].x2 = w; segs[0].y2 = w;
+	segs[1].x1 = 0; segs[1].y1 = w; segs[1].x2 = w; segs[1].y2 = w;
+	w = w / 2;
+	segs[2].x1 = w; segs[2].y1 = 0; segs[2].x2 = w; segs[2].y2 = w;
+	segs[3].x1 = 0; segs[3].y1 = w; segs[3].x2 = w; segs[3].y2 = w;
+	XDrawSegments (dpy, Scr->tbpm.resize, gc, segs, 4);
+
+	/*
+	 * done drawing
+	 */
+	XFreeGC(dpy, gc);
+    }
+    return Scr->tbpm.resize;
+}
+
+
+#define questionmark_width 8
+#define questionmark_height 8
+static char questionmark_bits[] = {
+   0x38, 0x7c, 0x64, 0x30, 0x18, 0x00, 0x18, 0x18};
+
+static Pixmap CreateQuestionPixmap (widthp, heightp)
+    unsigned int *widthp, *heightp;
+{
+    *widthp = questionmark_width;
+    *heightp = questionmark_height;
+    if (Scr->tbpm.question == None) {
+	Scr->tbpm.question = XCreateBitmapFromData (dpy, Scr->Root,
+						    questionmark_bits,
+						    questionmark_width,
+						    questionmark_height);
+    }
+    /*
+     * this must succeed or else we are in deep trouble elsewhere
+     */
+    return Scr->tbpm.question;
+}
+
+
+/* ARGSUSED */
+static Pixmap CreateMenuPixmap (widthp, heightp)
+    int *widthp, *heightp;
+{
+    fprintf (stderr, "%s:  built-in bitmap \"%s\" not implemented.\n",
+	     ProgramName, TBPM_MENU);
+    return None;
 }

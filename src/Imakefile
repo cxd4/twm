@@ -1,30 +1,54 @@
-#
-#Here is an Imakefile for twm.  It depends on having TWMDIR defined
-#in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
-#other people do also, so perhaps you could do us all a favor and
-#distribute this one.
-#
+/**/#
+/**/#Here is an Imakefile for twm.  It depends on having TWMDIR defined
+/**/#in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
+/**/#other people do also, so perhaps you could do us all a favor and
+/**/#distribute this one.
+/**/#
 
-       PROGRAMS = twm
-LOCAL_LIBRARIES = $(XLIB)
-      OTHERSRCS = gram.y lex.l
          YFLAGS = -d
+        DEPLIBS = $(DEPXMULIB) $(DEPEXTENSIONLIB) $(DEPXLIB)
+LOCAL_LIBRARIES = $(XMULIB) $(EXTENSIONLIB) $(XLIB)
+       LINTLIBS = $(LINTXMU) $(LINTEXTENSIONLIB) $(LINTXLIB)
+        DEFINES = ExtensionDefines $(SIGNAL_DEFINES)
 
-SRCS1=	add_window.c gc.c list.c twm.c parse.c\
-        menus.c events.c resize.c util.c version.c
+           SRCS = gram.c lex.c deftwmrc.c add_window.c gc.c list.c twm.c \
+		parse.c menus.c events.c resize.c util.c version.c iconmgr.c \
+		cursor.c icons.c
 
-OBJS1=	gram.o lex.o add_window.o gc.o list.o twm.o parse.o\
-        menus.o events.o resize.o util.o version.o
+           OBJS = gram.o lex.o deftwmrc.o add_window.o gc.o list.o twm.o \
+		parse.o menus.o events.o resize.o util.o version.o iconmgr.o \
+		cursor.o icons.o
 
-ComplexProgramTarget_1(twm,$(LOCAL_LIBRARIES),)
+AllTarget(twm)
 
-InstallNonExec(Sample.twmrc, $(TWMDIR))
-InstallNonExec(xterm.icon, $(TWMDIR))
+SpecialObjectRule(parse.o, ,'-DSYSTEM_INIT_FILE="'$(TWMDIR)'/system.twmrc"')
+#if !HasPutenv
+SpecialObjectRule(util.o, ,-DNOPUTENV)
+#endif
+
+depend:: lex.c gram.c deftwmrc.c 
+
+ComplexProgramTarget(twm)
+MakeDirectories(install,$(TWMDIR))
+InstallNonExec(system.twmrc, $(TWMDIR))
 
 gram.h gram.c: gram.y
-	yacc -d gram.y
-	mv y.tab.c gram.c
-	mv y.tab.h gram.h
+	yacc $(YFLAGS) gram.y
+	$(MV) y.tab.c gram.c
+	$(MV) y.tab.h gram.h
 
 clean::
-	$(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c
+	$(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c deftwmrc.c 
+
+deftwmrc.c:  system.twmrc
+	$(RM) $@
+	echo '/* ' >>$@
+	echo ' * This file is generated automatically from the default' >>$@
+	echo ' * twm bindings file system.twmrc by the twm Imakefile.' >>$@
+	echo ' */' >>$@
+	echo '' >>$@
+	echo 'char *defTwmrc[] = {' >>$@
+	sed -e '/^#/d' -e 's/"/\\"/g' -e 's/^/    "/' -e 's/$$/",/' \
+		system.twmrc >>$@
+	echo '    (char *) 0 };' >>$@
+

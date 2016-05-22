@@ -1,6 +1,8 @@
 /*****************************************************************************/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
+/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
+/**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
 /**                                                                         **/
@@ -9,23 +11,24 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    name  of Evans & Sutherland  not be used in advertising or publi-    **/
-/**    city pertaining to distribution  of the software without  specif-    **/
-/**    ic, written prior permission.                                        **/
+/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    in publicity pertaining to distribution of the  software  without    **/
+/**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS  & SUTHERLAND  DISCLAIMS  ALL  WARRANTIES  WITH  REGARD  TO    **/
-/**    THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILI-    **/
-/**    TY AND FITNESS, IN NO EVENT SHALL EVANS &  SUTHERLAND  BE  LIABLE    **/
-/**    FOR  ANY  SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY  DAM-    **/
-/**    AGES  WHATSOEVER RESULTING FROM  LOSS OF USE,  DATA  OR  PROFITS,    **/
-/**    WHETHER   IN  AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS    **/
-/**    ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE  OR PER-    **/
-/**    FORMANCE OF THIS SOFTWARE.                                           **/
+/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
+/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
+/**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
+/**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
+/**    OR PERFORMANCE OF THIS SOFTWARE.                                     **/
 /*****************************************************************************/
+
 
 /**********************************************************************
  *
- * $Header: gc.c,v 1.15 88/10/13 06:35:07 toml Exp $
+ * $XConsortium: gc.c,v 1.21 90/03/13 15:28:56 jim Exp $
  *
  * Open the fonts and create the GCs
  *
@@ -33,17 +36,15 @@
  *
  **********************************************************************/
 
-#ifndef lint
+#if !defined(lint) && !defined(SABER)
 static char RCSinfo[]=
-"$Header: gc.c,v 1.15 88/10/13 06:35:07 toml Exp $";
-#endif lint
+"$XConsortium: gc.c,v 1.21 90/03/13 15:28:56 jim Exp $";
+#endif
 
 #include <stdio.h>
 #include "twm.h"
 #include "util.h"
-
-static XFontStruct *dfont;		/* my default font */
-static char *dfontname;
+#include "screen.h"
 
 /***********************************************************************
  *
@@ -57,114 +58,41 @@ static char *dfontname;
 void
 CreateGCs()
 {
-    static int first_time = TRUE;
+    static ScreenInfo *prevScr = NULL;
     XGCValues	    gcv;
-    unsigned long   gcm, mask;
+    unsigned long   gcm;
 
-    if (!first_time)
+    if (!Scr->FirstTime || prevScr == Scr)
 	return;
 
-    first_time = FALSE;
+    prevScr = Scr;
 
     /* create GC's */
 
-    if (ReverseVideo)
-    {
-	DefaultC.back = Black;
-	DefaultC.fore = White;
-    }
-    else
-    {
-	DefaultC.fore = Black;
-	DefaultC.back = White;
-    }
-
-    gcm = 0;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = BorderTileC.fore;
-    gcm |= GCBackground;    gcv.background = BorderTileC.back;
-
-    BorderGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcm = 0;
-    gcm |= GCFont;	    gcv.font = MenuFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = MenuC.fore;
-    gcm |= GCBackground;    gcv.background = MenuC.back;
-
-    MenuNormalGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcv.foreground = MenuC.back;
-    gcv.background = MenuC.fore;
-
-    MenuReverseGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    mask = MenuC.fore ^ MenuC.back;
-
-    gcm = 0;
-    gcm |= GCFunction;	    gcv.function = GXxor;
-    gcm |= GCFont;	    gcv.font = MenuFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = mask;
-    gcm |= GCForeground;    gcv.foreground = mask;
-    gcm |= GCBackground;    gcv.background = MenuC.back;
-
-    MenuXorGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcm = 0;
-    gcm |= GCFont;	    gcv.font = MenuFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = MenuTitleC.fore;
-    gcm |= GCBackground;    gcv.background = MenuTitleC.back;
-
-    MenuTitleGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    mask = DefaultC.fore ^ DefaultC.back;
     gcm = 0;
     gcm |= GCFunction;	    gcv.function = GXxor;
     gcm |= GCLineWidth;	    gcv.line_width = 0;
-    gcm |= GCForeground;    gcv.foreground = mask;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = mask;
+    gcm |= GCForeground;    gcv.foreground = Scr->XORvalue;
     gcm |= GCSubwindowMode; gcv.subwindow_mode = IncludeInferiors;
 
-    DrawGC = XCreateGC(dpy, Root, gcm, &gcv);
+    Scr->DrawGC = XCreateGC(dpy, Scr->Root, gcm, &gcv);
 
     gcm = 0;
-    gcm |= GCFont;	    gcv.font = IconFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = IconC.fore;
-    gcm |= GCBackground;    gcv.background = IconC.back;
+    gcm |= GCForeground;    gcv.foreground = Scr->MenuC.fore;
+    gcm |= GCBackground;    gcv.background = Scr->MenuC.back;
+    gcm |= GCFont;	    gcv.font =  Scr->MenuFont.font->fid;
 
-    IconNormalGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcm = 0;
-    gcm |= GCFont;	    gcv.font = VersionFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = DefaultC.fore;
-    gcm |= GCBackground;    gcv.background = DefaultC.back;
-
-    VersionNormalGC = XCreateGC(dpy, Root, gcm, &gcv);
+    Scr->MenuGC = XCreateGC(dpy, Scr->Root, gcm, &gcv);
 
     gcm = 0;
-    gcm |= GCFont;	    gcv.font = SizeFont.font->fid;
     gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = DefaultC.fore;
-    gcm |= GCBackground;    gcv.background = DefaultC.back;
+    /*
+     * Prevent GraphicsExpose and NoExpose events.  We'd only get NoExpose
+     * events anyway;  they cause BadWindow errors from XGetWindowAttributes
+     * call in FindScreenInfo (events.c) (since drawable is a pixmap).
+     */
+    gcm |= GCGraphicsExposures;  gcv.graphics_exposures = False;
+    gcm |= GCLineWidth;	    gcv.line_width = 0;
 
-    SizeNormalGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcm = 0;
-    gcm |= GCFont;	    gcv.font = InitialFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = DefaultC.fore;
-    gcm |= GCBackground;    gcv.background = DefaultC.back;
-
-    InitialNormalGC = XCreateGC(dpy, Root, gcm, &gcv);
-
-    gcm = 0;
-    gcm |= GCFont;	    gcv.font = IconManagerFont.font->fid;
-    gcm |= GCPlaneMask;	    gcv.plane_mask = AllPlanes;
-    gcm |= GCForeground;    gcv.foreground = IconManagerC.fore;
-    gcm |= GCBackground;    gcv.background = IconManagerC.back;
-
-    IconManagerGC = XCreateGC(dpy, Root, gcm, &gcv);
+    Scr->NormalGC = XCreateGC(dpy, Scr->Root, gcm, &gcv);
 }
