@@ -98,8 +98,8 @@ splitEntry (IconEntry *ie, int grav1, int grav2, int w, int h)
     }
 }
 
-static inline int
-roundUp (int v, int multiple)
+static int
+roundUp(int v, int multiple)
 {
     return ((v + multiple - 1) / multiple) * multiple;
 }
