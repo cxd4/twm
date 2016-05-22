@@ -1,44 +1,36 @@
-XCOMM $XConsortium: Imakefile,v 1.33 91/07/17 00:48:06 gildea Exp $
-XCOMM
-XCOMM Here is an Imakefile for twm.  It depends on having TWMDIR defined
-XCOMM in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
-XCOMM other people do also, so perhaps you could do us all a favor and
-XCOMM distribute this one.
-XCOMM
+XCOMM $XConsortium: Imakefile,v 1.41 94/07/06 16:15:19 mor Exp $
 
          YFLAGS = -d
-        DEPLIBS = $(DEPXMULIB) $(DEPEXTENSIONLIB) $(DEPXLIB)
-LOCAL_LIBRARIES = $(XMULIB) $(EXTENSIONLIB) $(XLIB)
-       LINTLIBS = $(LINTXMU) $(LINTEXTENSIONLIB) $(LINTXLIB)
+        DEPLIBS = $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
+LOCAL_LIBRARIES = $(XMULIB) $(XTOOLLIB) $(XLIB)
+       LINTLIBS = $(LINTXMU) $(LINTXTOOLLIB) $(LINTXLIB)
         DEFINES = $(SIGNAL_DEFINES)
 
            SRCS = gram.c lex.c deftwmrc.c add_window.c gc.c list.c twm.c \
 		parse.c menus.c events.c resize.c util.c version.c iconmgr.c \
-		cursor.c icons.c
+		cursor.c icons.c session.c
 
            OBJS = gram.o lex.o deftwmrc.o add_window.o gc.o list.o twm.o \
 		parse.o menus.o events.o resize.o util.o version.o iconmgr.o \
-		cursor.o icons.o
+		cursor.o icons.o session.o
 
-AllTarget(twm)
+all::
 
-SpecialObjectRule(parse.o,NullParameter,'-DSYSTEM_INIT_FILE="'$(TWMDIR)'/system.twmrc"')
+SpecialCObjectRule(parse,$(_NOOP_),'-DSYSTEM_INIT_FILE="'$(TWMDIR)'/system.twmrc"')
 #if !HasPutenv
-SpecialObjectRule(util.o,NullParameter,-DNOPUTENV)
+SpecialCObjectRule(util,$(_NOOP_),-DNOPUTENV)
 #endif
 
-depend:: lex.c gram.c deftwmrc.c 
+LexFile(lex)
 
-ComplexProgramTarget(twm)
-InstallNonExecFile(system.twmrc,$(TWMDIR))
+YaccFile(gram,$(YFLAGS))
 
-gram.h gram.c: gram.y
-	yacc $(YFLAGS) gram.y
-	$(MV) y.tab.c gram.c
-	$(MV) y.tab.h gram.h
+includes:: deftwmrc.c 
+
+depend:: deftwmrc.c 
 
 clean::
-	$(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c deftwmrc.c 
+	RemoveFile(deftwmrc.c)
 
 deftwmrc.c:  system.twmrc
 	$(RM) $@
@@ -52,3 +44,5 @@ deftwmrc.c:  system.twmrc
 		system.twmrc >>$@
 	echo '    (char *) 0 };' >>$@
 
+ComplexProgramTarget(twm)
+InstallNonExecFile(system.twmrc,$(TWMDIR))

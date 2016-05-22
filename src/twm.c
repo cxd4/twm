@@ -1,7 +1,32 @@
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -11,14 +36,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: twm.c,v 1.124 91/05/08 11:01:54 dave Exp $
+ * $XConsortium: twm.c,v 1.135 94/12/27 20:52:15 mor Exp $
  *
  * twm - "Tom's Window Manager"
  *
@@ -52,6 +77,9 @@
 #include "iconmgr.h"
 #include <X11/Xproto.h>
 #include <X11/Xatom.h>
+#include <X11/SM/SMlib.h>
+
+XtAppContext appContext;	/* Xt application context */
 
 Display *dpy;			/* which display are we talking to */
 Window ResizeWindow;		/* the window we are resizing */
@@ -60,6 +88,8 @@ int MultiScreen = TRUE;		/* try for more than one screen? */
 int NumScreens;			/* number of screens in ScreenList */
 int HasShape;			/* server supports shape extension? */
 int ShapeEventBase, ShapeErrorBase;
+int HasSync;			/* server supports SYNC extension? */
+int SyncEventBase, SyncErrorBase;
 ScreenInfo **ScreenList;	/* structures for each screen */
 ScreenInfo *Scr = NULL;		/* the cur and prev screens */
 int PreviousScreen;		/* last screen that we were on */
@@ -110,6 +140,23 @@ unsigned long black, white;
 
 extern void assign_var_savecolor();
 
+Atom TwmAtoms[11];
+
+/* don't change the order of these strings */
+static char* atom_names[11] = {
+    "_MIT_PRIORITY_COLORS",
+    "WM_CHANGE_STATE",
+    "WM_STATE",
+    "WM_COLORMAP_WINDOWS",
+    "WM_PROTOCOLS",
+    "WM_TAKE_FOCUS",
+    "WM_SAVE_YOURSELF",
+    "WM_DELETE_WINDOW",
+    "SM_CLIENT_ID",
+    "WM_CLIENT_LEADER",
+    "WM_WINDOW_ROLE"
+};
+
 /***********************************************************************
  *
  *  Procedure:
@@ -131,6 +178,9 @@ main(argc, argv, environ)
     XSetWindowAttributes attributes;	/* attributes for create windows */
     int numManaged, firstscrn, lastscrn, scrnum;
     extern ColormapWindow *CreateColormapWindow();
+    int zero = 0;
+    char *restore_filename = NULL;
+    char *client_id = NULL;
 
     ProgramName = argv[0];
     Argc = argc;
@@ -154,6 +204,14 @@ main(argc, argv, environ)
 	      case 'v':				/* -verbose */
 		PrintErrorMessages = True;
 		continue;
+	      case 'c':				/* -clientId */
+		if (++i >= argc) goto usage;
+		client_id = argv[i];
+		continue;
+	      case 'r':				/* -restore */
+		if (++i >= argc) goto usage;
+		restore_filename = argv[i];
+		continue;
 	      case 'q':				/* -quiet */
 		PrintErrorMessages = False;
 		continue;
@@ -161,7 +219,7 @@ main(argc, argv, environ)
 	}
       usage:
 	fprintf (stderr,
-		 "usage:  %s [-display dpy] [-f file] [-s] [-q] [-v]\n",
+		 "usage:  %s [-display dpy] [-f file] [-s] [-q] [-v] [-clientId id] [-restore file]\n",
 		 ProgramName);
 	exit (1);
     }
@@ -185,7 +243,11 @@ main(argc, argv, environ)
     NoClass.res_name = NoName;
     NoClass.res_class = NoName;
 
-    if (!(dpy = XOpenDisplay(display_name))) {
+    XtToolkitInitialize ();
+    appContext = XtCreateApplicationContext ();
+
+    if (!(dpy = XtOpenDisplay (appContext, display_name, "twm", "twm",
+	NULL, 0, &zero, NULL))) {
 	fprintf (stderr, "%s:  unable to open display \"%s\"\n",
 		 ProgramName, XDisplayName(display_name));
 	exit (1);
@@ -198,15 +260,19 @@ main(argc, argv, environ)
 	exit (1);
     }
 
+    if (restore_filename)
+	ReadWinConfigFile (restore_filename);
+
     HasShape = XShapeQueryExtension (dpy, &ShapeEventBase, &ShapeErrorBase);
+    HasSync = XSyncQueryExtension(dpy,  &SyncEventBase, &SyncErrorBase);
     TwmContext = XUniqueContext();
     MenuContext = XUniqueContext();
     IconManagerContext = XUniqueContext();
     ScreenContext = XUniqueContext();
     ColormapContext = XUniqueContext();
 
-    InternUsefulAtoms ();
-
+    (void) XInternAtoms(dpy, atom_names, sizeof TwmAtoms / sizeof TwmAtoms[0],
+			False, TwmAtoms);
 
     /* Set up the per-screen global information. */
 
@@ -345,6 +411,8 @@ main(argc, argv, environ)
 
 	if (DisplayCells(dpy, scrnum) < 3)
 	    Scr->Monochrome = MONOCHROME;
+ 	else if (DefaultVisual(dpy, scrnum)->class == GrayScale) 
+ 	    Scr->Monochrome = GRAYSCALE;
 	else
 	    Scr->Monochrome = COLOR;
 
@@ -509,6 +577,8 @@ main(argc, argv, environ)
 	exit (1);
     }
 
+    (void) ConnectToSessionManager (client_id);
+
     RestartPreviousState = False;
     HandlingEvents = TRUE;
     InitEvents();
@@ -584,6 +654,12 @@ InitVariables()
     Scr->IconC.fore = black;
     Scr->IconC.back = white;
     Scr->IconBorderColor = black;
+    Scr->PointerForeground.pixel = black;
+    XQueryColor(dpy, Scr->TwmRoot.cmaps.cwins[0]->colormap->c,
+		&Scr->PointerForeground);
+    Scr->PointerBackground.pixel = white;
+    XQueryColor(dpy, Scr->TwmRoot.cmaps.cwins[0]->colormap->c,
+		&Scr->PointerBackground);
     Scr->IconManagerC.fore = black;
     Scr->IconManagerC.back = white;
     Scr->IconManagerHighlight = black;
@@ -807,28 +883,4 @@ static int CatchRedirectError(dpy, event)
     LastErrorEvent = *event;
     ErrorOccurred = True;
     return 0;
-}
-
-Atom _XA_MIT_PRIORITY_COLORS;
-Atom _XA_WM_CHANGE_STATE;
-Atom _XA_WM_STATE;
-Atom _XA_WM_COLORMAP_WINDOWS;
-Atom _XA_WM_PROTOCOLS;
-Atom _XA_WM_TAKE_FOCUS;
-Atom _XA_WM_SAVE_YOURSELF;
-Atom _XA_WM_DELETE_WINDOW;
-
-InternUsefulAtoms ()
-{
-    /* 
-     * Create priority colors if necessary.
-     */
-    _XA_MIT_PRIORITY_COLORS = XInternAtom(dpy, "_MIT_PRIORITY_COLORS", False);   
-    _XA_WM_CHANGE_STATE = XInternAtom (dpy, "WM_CHANGE_STATE", False);
-    _XA_WM_STATE = XInternAtom (dpy, "WM_STATE", False);
-    _XA_WM_COLORMAP_WINDOWS = XInternAtom (dpy, "WM_COLORMAP_WINDOWS", False);
-    _XA_WM_PROTOCOLS = XInternAtom (dpy, "WM_PROTOCOLS", False);
-    _XA_WM_TAKE_FOCUS = XInternAtom (dpy, "WM_TAKE_FOCUS", False);
-    _XA_WM_SAVE_YOURSELF = XInternAtom (dpy, "WM_SAVE_YOURSELF", False);
-    _XA_WM_DELETE_WINDOW = XInternAtom (dpy, "WM_DELETE_WINDOW", False);
 }

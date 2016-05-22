@@ -1,7 +1,32 @@
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -11,14 +36,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: events.c,v 1.182 91/07/17 13:59:14 dave Exp $
+ * $XConsortium: events.c,v 1.190 94/07/21 17:46:35 mor Exp $
  *
  * twm event handling
  *
@@ -130,8 +155,8 @@ InitEvents()
     int i;
 
 
-    ResizeWindow = NULL;
-    DragWindow = NULL;
+    ResizeWindow = (Window) 0;
+    DragWindow = (Window) 0;
     enter_flag = FALSE;
     enter_win = raise_win = NULL;
 
@@ -341,8 +366,11 @@ HandleEvents()
 	    InstallWindowColormaps(ColormapNotify, (TwmWindow *) NULL);
 	}
 	WindowMoved = FALSE;
-	XNextEvent(dpy, &Event);
-	(void) DispatchEvent ();
+	XtAppNextEvent(appContext, &Event);
+	if (Event.type>= 0 && Event.type < MAX_X_EVENT)
+	    (void) DispatchEvent ();
+	else
+	    XtDispatchEvent (&Event);
     }
 }
 
@@ -553,9 +581,12 @@ HandleVisibilityNotify()
  ***********************************************************************
  */
 
+int MovedFromKeyPress = False;
+
 void
 HandleKeyPress()
 {
+    KeySym ks;
     FuncKey *key;
     int len;
     unsigned int modifier;
@@ -582,17 +613,21 @@ HandleKeyPress()
     }
 
     modifier = (Event.xkey.state & mods_used);
+    ks = XLookupKeysym((XKeyEvent *) &Event, /* KeySyms index */ 0);
     for (key = Scr->FuncKeyRoot.next; key != NULL; key = key->next)
     {
-	if (key->keycode == Event.xkey.keycode &&
+ 	if (key->keysym == ks &&
 	    key->mods == modifier &&
 	    (key->cont == Context || key->cont == C_NAME))
 	{
 	    /* weed out the functions that don't make sense to execute
 	     * from a key press 
 	     */
-	    if (key->func == F_MOVE || key->func == F_RESIZE)
+	    if (key->func == F_RESIZE)
 		return;
+            /* special case for F_MOVE/F_FORCEMOVE activated from a keypress */
+            if (key->func == F_MOVE || key->func == F_FORCEMOVE)
+                MovedFromKeyPress = True;
 
 	    if (key->cont != C_NAME)
 	    {
@@ -779,6 +814,8 @@ HandlePropertyNotify()
 	Tmp_win->full_name = prop;
 	Tmp_win->name = prop;
 
+	Tmp_win->nameChanged = 1;
+
 	Tmp_win->name_width = XTextWidth (Scr->TitleBarFont.font,
 					  Tmp_win->name,
 					  strlen (Tmp_win->name));
@@ -949,7 +986,7 @@ RedoIconName()
 	    SortIconManager(Tmp_win->list->iconmgr);
     }
 
-    if (Tmp_win->icon_w == NULL)
+    if (Tmp_win->icon_w == (Window) 0)
 	return;
 
     if (Tmp_win->icon_not_ours)
@@ -1261,6 +1298,9 @@ HandleDestroyNotify()
       free ((char *) Tmp_win->titlebuttons);
     remove_window_from_ring (Tmp_win);				/* 11 */
 
+    if (UnHighLight_win == Tmp_win)
+	UnHighLight_win = NULL;
+
     free((char *)Tmp_win);
 }
 
@@ -1487,7 +1527,7 @@ HandleUnmapNotify()
 void
 HandleMotionNotify()
 {
-    if (ResizeWindow != NULL)
+    if (ResizeWindow != (Window) 0)
     {
 	XQueryPointer( dpy, Event.xany.window,
 	    &(Event.xmotion.root), &JunkChild,
@@ -1602,16 +1642,16 @@ HandleButtonRelease()
 			 ? Tmp_win : NULL);
 	}
 
-	DragWindow = NULL;
+	DragWindow = (Window) 0;
 	ConstMove = FALSE;
     }
 
-    if (ResizeWindow != NULL)
+    if (ResizeWindow != (Window) 0)
     {
 	EndResize();
     }
 
-    if (ActiveMenu != NULL && RootFunction == NULL)
+    if (ActiveMenu != NULL && RootFunction == 0)
     {
 	if (ActiveItem != NULL)
 	{
@@ -1640,7 +1680,7 @@ HandleButtonRelease()
 	    /* if we are not executing a defered command, then take down the
 	     * menu
 	     */
-	    if (RootFunction == NULL)
+	    if (RootFunction == 0)
 	    {
 		PopDownMenu();
 	    }
@@ -1659,12 +1699,12 @@ HandleButtonRelease()
 	case Button5: mask &= ~Button5Mask; break;
     }
 
-    if (RootFunction != NULL ||
+    if (RootFunction != 0 ||
 	ResizeWindow != None ||
 	DragWindow != None)
 	ButtonPressed = -1;
 
-    if (RootFunction == NULL &&
+    if (RootFunction == 0 &&
 	(Event.xbutton.state & mask) == 0 &&
 	DragWindow == None &&
 	ResizeWindow == None)
@@ -1807,7 +1847,7 @@ HandleButtonPress()
 	Context = C_ROOT;
     if (Tmp_win)
     {
-	if (Tmp_win->list && RootFunction != NULL &&
+	if (Tmp_win->list && RootFunction != 0 &&
 	    (Event.xany.window == Tmp_win->list->w ||
 		Event.xany.window == Tmp_win->list->icon))
 	{
@@ -1867,7 +1907,7 @@ HandleButtonPress()
     /* this section of code checks to see if we were in the middle of
      * a command executed from a menu
      */
-    if (RootFunction != NULL)
+    if (RootFunction != 0)
     {
 	if (Event.xany.window == Scr->Root)
 	{
@@ -1884,7 +1924,7 @@ HandleButtonPress()
 		(XFindContext(dpy, Event.xany.window, TwmContext,
 			      (caddr_t *)&Tmp_win) == XCNOENT))
 	    {
-		RootFunction = NULL;
+		RootFunction = 0;
 		XBell(dpy, 0);
 		return;
 	    }
@@ -1904,7 +1944,7 @@ HandleButtonPress()
 	  ExecuteFunction(RootFunction, Action, Event.xany.window,
 			  Tmp_win, &Event, Context, FALSE);
 
-	RootFunction = NULL;
+	RootFunction = 0;
 	return;
     }
 
@@ -1919,20 +1959,20 @@ HandleButtonPress()
     if (Context == C_NO_CONTEXT)
 	return;
 
-    RootFunction = NULL;
+    RootFunction = 0;
     if (Scr->Mouse[Event.xbutton.button][Context][modifier].func == F_MENU)
     {
 	do_menu (Scr->Mouse[Event.xbutton.button][Context][modifier].menu,
 		 (Window) None);
     }
-    else if (Scr->Mouse[Event.xbutton.button][Context][modifier].func != NULL)
+    else if (Scr->Mouse[Event.xbutton.button][Context][modifier].func != 0)
     {
 	Action = Scr->Mouse[Event.xbutton.button][Context][modifier].item ?
 	    Scr->Mouse[Event.xbutton.button][Context][modifier].item->action : NULL;
 	ExecuteFunction(Scr->Mouse[Event.xbutton.button][Context][modifier].func,
 	    Action, Event.xany.window, Tmp_win, &Event, Context, FALSE);
     }
-    else if (Scr->DefaultFunction.func != NULL)
+    else if (Scr->DefaultFunction.func != 0)
     {
 	if (Scr->DefaultFunction.func == F_MENU)
 	{
@@ -2140,7 +2180,7 @@ HandleEnterNotify()
     if (XFindContext (dpy, ewp->window, MenuContext, (caddr_t *)&mr) != XCSUCCESS) return;
 
     mr->entered = TRUE;
-    if (ActiveMenu && mr == ActiveMenu->prev && RootFunction == NULL) {
+    if (ActiveMenu && mr == ActiveMenu->prev && RootFunction == 0) {
 	if (Scr->Shadow) XUnmapWindow (dpy, ActiveMenu->shadow);
 	XUnmapWindow (dpy, ActiveMenu->w);
 	ActiveMenu->mapped = UNMAPPED;
@@ -2612,7 +2652,7 @@ InstallWindowColormaps (type, tmp)
 
     Scr->cmapInfo.first_req = NextRequest(dpy);
 
-    for ( ; n > 0; maxcwin--) {
+    for ( ; n > 0 && maxcwin >= cwins; maxcwin--) {
 	cmap = (*maxcwin)->colormap;
 	if (cmap->state & CM_INSTALL) {
 	    cmap->state &= ~CM_INSTALL;

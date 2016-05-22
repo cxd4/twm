@@ -1,7 +1,32 @@
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -11,14 +36,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: menus.c,v 1.186 91/07/17 13:58:00 dave Exp $
+ * $XConsortium: menus.c,v 1.197 94/08/10 19:57:54 mor Exp $
  *
  * twm menu code
  *
@@ -37,7 +62,6 @@
  ***********************************************************************/
 
 #include <stdio.h>
-#include <signal.h>
 #include <X11/Xos.h>
 #include "twm.h"
 #include "gc.h"
@@ -51,10 +75,12 @@
 #include <X11/Xmu/CharSet.h>
 #include <X11/bitmaps/menu12>
 #include "version.h"
+#include <X11/extensions/sync.h>
+#include <X11/SM/SMlib.h>
 
 extern XEvent Event;
 
-int RootFunction = NULL;
+int RootFunction = 0;
 MenuRoot *ActiveMenu = NULL;		/* the active menu */
 MenuItem *ActiveItem = NULL;		/* the active menu item */
 int MoveFunction;			/* either F_MOVE or F_FORCEMOVE */
@@ -113,12 +139,12 @@ InitMenus()
 	for (j = 0; j < NUM_CONTEXTS; j++)
 	    for (k = 0; k < MOD_SIZE; k++)
 	    {
-		Scr->Mouse[i][j][k].func = NULL;
+		Scr->Mouse[i][j][k].func = 0;
 		Scr->Mouse[i][j][k].item = NULL;
 	    }
 
-    Scr->DefaultFunction.func = NULL;
-    Scr->WindowFunction.func = NULL;
+    Scr->DefaultFunction.func = 0;
+    Scr->WindowFunction.func = 0;
 
     if (FirstScreen)
     {
@@ -1319,6 +1345,24 @@ void resizeFromCenter(w, tmp_win)
  ***********************************************************************
  */
 
+/* for F_WARPTO */
+#define true 1
+#define false 0
+int
+WarpThere(t) 
+    TwmWindow* t; 
+{
+    if (Scr->WarpUnmapped || t->mapped) {
+        if (!t->mapped) DeIconify (t);
+        if (!Scr->NoRaiseWarp) XRaiseWindow (dpy, t->frame);
+        WarpToWindow (t); 
+        return true; 
+    }    
+    return false;
+}
+
+extern int MovedFromKeyPress;
+
 int
 ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
     int func;
@@ -1341,7 +1385,7 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
     Bool fromtitlebar = False;
     extern int ConstrainedMoveTime;
 
-    RootFunction = NULL;
+    RootFunction = 0;
     if (Cancel)
 	return TRUE;			/* XXX should this be FALSE? */
 
@@ -1384,12 +1428,18 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 	break;
 
     case F_RESTART:
+    {
+	extern SmcConn smcConn;
+
 	XSync (dpy, 0);
 	Reborder (eventp->xbutton.time);
 	XSync (dpy, 0);
+	if (smcConn)
+	    SmcCloseConnection (smcConn, 0, NULL);
 	execvp(*Argv, Argv);
 	fprintf (stderr, "%s:  unable to restart:  %s\n", ProgramName, *Argv);
 	break;
+    }
 
     case F_UPICONMGR:
     case F_DOWNICONMGR:
@@ -1465,7 +1515,7 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 
     case F_POPUP:
 	tmp_win = (TwmWindow *)action;
-	if (Scr->WindowFunction.func != NULL)
+	if (Scr->WindowFunction.func != 0)
 	{
 	   ExecuteFunction(Scr->WindowFunction.func,
 			   Scr->WindowFunction.item->action,
@@ -1699,15 +1749,15 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 	    }
 
 	    /* test to see if we have a second button press to abort move */
-	    if (!menuFromFrameOrWindowOrTitlebar)
-	      if (Event.type == ButtonPress && DragWindow != None) {
-		if (Scr->OpaqueMove)
-		  XMoveWindow (dpy, DragWindow, origDragX, origDragY);
-		else
-		  MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
-		DragWindow = None;
-	      }
-
+	    if (!menuFromFrameOrWindowOrTitlebar &&  !MovedFromKeyPress) {
+	        if (Event.type == ButtonPress && DragWindow != None) {
+		    if (Scr->OpaqueMove)
+		      XMoveWindow (dpy, DragWindow, origDragX, origDragY);
+		    else
+		        MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
+		    DragWindow = None;
+                }
+	    }
 	    if (fromtitlebar && Event.type == ButtonPress) {
 		fromtitlebar = False;
 		CurrentDragX = origX = Event.xbutton.x_root;
@@ -1861,6 +1911,8 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 	    }
 
 	}
+        MovedFromKeyPress = False;
+
 
 	if (!Scr->OpaqueMove && DragWindow == None)
 	    UninstallRootColormap();
@@ -2094,28 +2146,24 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 	    len = strlen(action);
 
 	    for (t = Scr->TwmRoot.next; t != NULL; t = t->next) {
-		if (!strncmp(action, t->class.res_name, len)) break;
+		if (!strncmp(action, t->name, len)) 
+                    if (WarpThere(t)) break;
 	    }
 	    if (!t) {
 		for (t = Scr->TwmRoot.next; t != NULL; t = t->next) {
-		    if (!strncmp(action, t->class.res_name, len)) break;
+		    if (!strncmp(action, t->class.res_name, len)) 
+                        if (WarpThere(t)) break;
 		}
 		if (!t) {
 		    for (t = Scr->TwmRoot.next; t != NULL; t = t->next) {
-			if (!strncmp(action, t->class.res_class, len)) break;
+			if (!strncmp(action, t->class.res_class, len)) 
+                            if (WarpThere(t)) break;
 		    }
 		}
 	    }
 
-	    if (t) {
-		if (Scr->WarpUnmapped || t->mapped) {
-		    if (!t->mapped) DeIconify (t);
-		    if (!Scr->NoRaiseWarp) XRaiseWindow (dpy, t->frame);
-		    WarpToWindow (t);
-		}
-	    } else {
+	    if (!t) 
 		XBell (dpy, 0);
-	    }
 	}
 	break;
 
@@ -2227,6 +2275,15 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 
     case F_QUIT:
 	Done();
+	break;
+
+    case F_PRIORITY:
+	if (HasSync)
+	{
+	    if (DeferExecution (context, func, Scr->SelectCursor))
+		return TRUE;
+	    (void)XSyncSetPriority(dpy, tmp_win->w, atoi(action));
+        }
 	break;
     }
 
@@ -2351,6 +2408,21 @@ MenuRoot *root;
  ***********************************************************************
  */
 
+#if defined(sun) && defined(SVR4)
+static int System (s)
+    char *s;
+{
+    int pid, status;
+    if ((pid = fork ()) == 0) {
+	(void) setpgrp();
+	execl ("/bin/sh", "sh", "-c", s, 0);
+    } else
+	waitpid (pid, &status, 0);
+    return status;
+}
+#define system(s) System(s)
+#endif
+
 void
 Execute(s)
     char *s;
@@ -2373,12 +2445,12 @@ Execute(s)
      * that they were invoked from, unless specifically overridden on
      * their command line.
      */
-    colon = rindex (ds, ':');
+    colon = strrchr (ds, ':');
     if (colon) {			/* if host[:]:dpy */
 	strcpy (buf, "DISPLAY=");
 	strcat (buf, ds);
 	colon = buf + 8 + (colon - ds);	/* use version in buf */
-	dot1 = index (colon, '.');	/* first period after colon */
+	dot1 = strchr (colon, '.');	/* first period after colon */
 	if (!dot1) dot1 = colon + strlen (colon);  /* if not there, append */
 	(void) sprintf (dot1, ".%d", Scr->screen);
 	putenv (buf);
@@ -2427,7 +2499,7 @@ TwmWindow *tmp_win;
     {
 	if (tmp_win->icon_on)
 	    Zoom(tmp_win->icon_w, tmp_win->frame);
-	else if (tmp_win->group != NULL)
+	else if (tmp_win->group != (Window) 0)
 	{
 	    for (t = Scr->TwmRoot.next; t != NULL; t = t->next)
 	    {
@@ -2507,7 +2579,7 @@ int def_x, def_y;
     iconify = ((!tmp_win->iconify_by_unmapping) || tmp_win->transient);
     if (iconify)
     {
-	if (tmp_win->icon_w == NULL)
+	if (tmp_win->icon_w == (Window) 0)
 	    CreateIconWindow(tmp_win, def_x, def_y);
 	else
 	    IconUp(tmp_win);
@@ -2615,6 +2687,12 @@ TwmWindow *t;
 		x, y);
 	(void) sprintf(Info[n++], "Border width     = %d", bw);
 	(void) sprintf(Info[n++], "Depth            = %d", depth);
+	if (HasSync)
+	{
+	    int priority;
+	    (void)XSyncGetPriority(dpy, t->w, &priority);
+	    (void) sprintf(Info[n++], "Priority         = %d", priority);
+	}
     }
 
     Info[n++][0] = '\0';

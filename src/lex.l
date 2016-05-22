@@ -1,8 +1,33 @@
 %{
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -12,14 +37,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: lex.l,v 1.62 89/12/10 17:46:33 jim Exp $
+ * $XConsortium: lex.l,v 1.70 95/03/01 16:37:51 kaleb Exp $
  *
  * .twmrc lex file
  *
@@ -42,6 +67,26 @@
 extern char *ProgramName;
 
 extern int ParseError;
+#ifdef FLEX_SCANNER
+int yylineno;
+
+#undef YY_INPUT
+#define YY_INPUT(buf,result,size) ((result) = doinput((buf),(size)))
+doinput (buf, size)
+char *buf;
+{
+	int c;
+
+	if (size == 0)
+		return (0);
+
+	if ((c = (*twmInputFunc)()) <= 0)
+		return (0);
+
+	buf[0] = c;
+	return (1);
+}
+#endif
 
 %}
 
@@ -74,7 +119,7 @@ number				[0-9]+
 "^"				{ yylval.num = F_CUT; return FSKEYWORD; }
 
 {string}			{ yylval.ptr = (char *)yytext; return STRING; }
-{number}			{ (void)sscanf(yytext, "%d", &yylval.num);
+{number}			{ (void)sscanf((char *)yytext, "%d", &yylval.num);
 				  return (NUMBER);
 				}
 \#[^\n]*\n			{;}
@@ -87,7 +132,9 @@ number				[0-9]+
 				  ParseError = 1;
 				}
 %%
+#ifndef yywrap
 yywrap() { return(1);}
+#endif
 
 #undef unput
 #undef input

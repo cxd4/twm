@@ -1,7 +1,32 @@
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -11,14 +36,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: parse.c,v 1.52 91/07/12 09:59:37 dave Exp $
+ * $XConsortium: parse.c,v 1.57 94/04/17 20:38:19 dpw Exp $
  *
  * parse the .twmrc file
  *
@@ -46,6 +71,7 @@
 #include "gram.h"
 #include "parse.h"
 #include <X11/Xatom.h> 
+#include <X11/extensions/sync.h>
 
 #ifndef SYSTEM_INIT_FILE
 #define SYSTEM_INIT_FILE "/usr/lib/X11/twm/system.twmrc"
@@ -99,6 +125,40 @@ static int doparse (ifunc, srctypename, srcname)
 
     yyparse();
 
+    if (Scr->PointerForeground.pixel != Scr->Black ||
+	Scr->PointerBackground.pixel != Scr->White)
+    {
+	XRecolorCursor(dpy, UpperLeftCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, RightButt,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, LeftButt,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, MiddleButt,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->FrameCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->TitleCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->IconCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->IconMgrCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->MoveCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->ResizeCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->MenuCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->ButtonCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->WaitCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->SelectCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+	XRecolorCursor(dpy, Scr->DestroyCursor,
+		       &Scr->PointerForeground, &Scr->PointerBackground);
+    }
     if (ParseError) {
 	fprintf (stderr, "%s:  errors found in twm %s",
 		 ProgramName, srctypename);
@@ -330,6 +390,7 @@ typedef struct _TwmKeyword {
 #define kwn_BorderWidth			7
 #define kwn_IconBorderWidth		8
 #define kwn_TitleButtonBorderWidth	9
+#define kwn_Priority			10
 
 #define kwcl_BorderColor		1
 #define kwcl_IconManagerHighlight	2
@@ -350,6 +411,8 @@ typedef struct _TwmKeyword {
 #define kwc_MenuTitleForeground		5
 #define kwc_MenuTitleBackground		6
 #define kwc_MenuShadowColor		7
+#define kwc_PointerForeground		8
+#define kwc_PointerBackground		9
 
 
 /*
@@ -420,6 +483,7 @@ static TwmKeyword keytable[] = {
     { "f.nexticonmgr",		FKEYWORD, F_NEXTICONMGR },
     { "f.nop",			FKEYWORD, F_NOP },
     { "f.previconmgr",		FKEYWORD, F_PREVICONMGR },
+    { "f.priority",		FSKEYWORD, F_PRIORITY },
     { "f.quit",			FKEYWORD, F_QUIT },
     { "f.raise",		FKEYWORD, F_RAISE },
     { "f.raiselower",		FKEYWORD, F_RAISELOWER },
@@ -450,6 +514,8 @@ static TwmKeyword keytable[] = {
     { "frame",			FRAME, 0 },
     { "framepadding",		NKEYWORD, kwn_FramePadding },
     { "function",		FUNCTION, 0 },
+    { "grayscale",		GRAYSCALE, 0 },
+    { "greyscale",		GRAYSCALE, 0 },
     { "i",			ICON, 0 },
     { "icon",			ICON, 0 },
     { "iconbackground",		CLKEYWORD, kwcl_IconBackground },
@@ -510,6 +576,9 @@ static TwmKeyword keytable[] = {
     { "noversion",		KEYWORD, kw0_NoVersion },
     { "opaquemove",		KEYWORD, kw0_OpaqueMove },
     { "pixmaps",		PIXMAPS, 0 },
+    { "pointerbackground",	CKEYWORD, kwc_PointerBackground },
+    { "pointerforeground",	CKEYWORD, kwc_PointerForeground },
+    { "priority",		NKEYWORD, kwn_Priority },
     { "r",			ROOT, 0 },
     { "randomplacement",	KEYWORD, kw0_RandomPlacement },
     { "resize",			RESIZE, 0 },
@@ -799,6 +868,9 @@ int do_number_keyword (keyword, num)
 	if (Scr->FirstTime) Scr->TBInfo.border = num;
 	return 1;
 
+      case kwn_Priority:
+	if (HasSync) XSyncSetPriority(dpy, /*self*/ None, num);
+	return 1;
     }
 
     return 0;
@@ -891,6 +963,13 @@ int do_color_keyword (keyword, colormode, s)
 	GetColor (colormode, &Scr->MenuShadowColor, s);
 	return 1;
 
+      case kwc_PointerForeground:
+	GetColorValue (colormode, &Scr->PointerForeground, s);
+	return 1;
+
+      case kwc_PointerBackground:
+	GetColorValue (colormode, &Scr->PointerBackground, s);
+	return 1;
     }
 
     return 0;

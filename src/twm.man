@@ -1,3 +1,31 @@
+.\" $XConsortium: twm.man,v 1.63 94/04/17 20:38:25 gildea Exp $
+.\" Copyright (c) 1993, 1994  X Consortium
+.\" Portions copyright 1988 Evans & Sutherland Computer Corporation.
+.\" Portions copyright 1989 Hewlett-Packard Company
+.\" 
+.\" Permission is hereby granted, free of charge, to any person obtaining
+.\" a copy of this software and associated documentation files (the
+.\" "Software"), to deal in the Software without restriction, including
+.\" without limitation the rights to use, copy, modify, merge, publish,
+.\" distribute, sublicense, and/or sell copies of the Software, and to
+.\" permit persons to whom the Software is furnished to do so, subject to
+.\" the following conditions:
+.\" 
+.\" The above copyright notice and this permission notice shall be included
+.\" in all copies or substantial portions of the Software.
+.\" 
+.\" THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+.\" OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+.\" MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+.\" IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+.\" OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+.\" ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+.\" OTHER DEALINGS IN THE SOFTWARE.
+.\" 
+.\" Except as contained in this notice, the name of the X Consortium shall
+.\" not be used in advertising or otherwise to promote the sale, use or
+.\" other dealings in this Software without prior written authorization
+.\" from the X Consortium.
 .de EX		\"Begin example
 .ne 5
 .if n .sp 1
@@ -12,15 +40,13 @@
 .if t .sp .5
 ..
 .ta .3i .6i .9i 1.2i 1.5i 1.8i
-.TH TWM 1 "Release 5" "X Version 11"
+.TH TWM 1 "Release 6" "X Version 11"
 .SH NAME
-twm - Tab Window Manager for the X Window System
+twm \- Tab Window Manager for the X Window System
 .SH SYNTAX
-.PP
-\fBtwm \fP[-display \fIdpy\fP] [-s] [-f \fIinitfile\fP] [-v]
-.PP
+\fBtwm \fP[ \fB\-display\fP \fIdpy\fP ] [ \fB\-s\fP ]
+[ \fB\-f\fP \fIinitfile\fP ] [ \fB\-v\fP ]
 .SH DESCRIPTION
-.PP
 \fITwm\fP is a window manager for the X Window System.  It provides 
 titlebars, shaped windows,
 several forms of icon management, user-defined macro functions, 
@@ -31,7 +57,7 @@ This program is usually started by the user's session manager or
 startup script.  When used from \fIxdm(1)\fP or \fIxinit(1)\fP without
 a session manager, \fItwm\fP is frequently executed in the foreground
 as the last client.  When run this way, exiting \fItwm\fP causes the 
-session to be terminated (i.e. logged out).
+session to be terminated (i.e., logged out).
 .PP
 By default, application windows are surrounded by a ``frame'' with a 
 titlebar at the top and a special border around the window.  The titlebar 
@@ -109,11 +135,12 @@ differing visual types.
 .B "$HOME/.twmrc"
 This is the usual name for an individual user's startup file.
 .TP 8
-.B "/usr/lib/X11/twm/system.twmrc"
+.B "<XRoot>/lib/X11/twm/system.twmrc"
 If neither of the preceding files are found, \fItwm\fP will look in this
 file for a 
 default configuration.  This is often tailored by the site administrator to
-provide convenient menus or familiar bindings for novice users.
+provide convenient menus or familiar bindings for novice users.  <XRoot>
+refers to the root of the X11 install tree.
 .PP
 If no startup files are found, \fItwm\fP will use the built-in defaults
 described above.  The only resource used by \fItwm\fP is 
@@ -162,7 +189,7 @@ or
 When a variable containing a list of strings representing windows is searched 
 (e.g. to determine whether or not to enable autoraise as shown above), a string
 must be an exact, case-sensitive match to
-the window's name name (given by the WM_NAME window property), resource name 
+the window's name (given by the WM_NAME window property), resource name 
 or class name (both given by the WM_CLASS window property).  The preceding
 example would enable autoraise on windows named ``emacs'' as well as any
 \fIxterm\fP (since they are of class ``XTerm'') or xmh windows 
@@ -175,9 +202,11 @@ prepend the user's directory
 tilde (~).  If, instead, the first character is a colon (:), the name is
 assumed to refer to one of the internal bitmaps that are used to
 create the default titlebars symbols:  \fB:xlogo\fP 
-or \fB:iconify\fP (both refer to the
-X used for the iconify button), \fB:resize\fP (the nested squares used by the
-resize button), and \fB:question\fP (the question mark used for non-existent
+or \fB:delete\fP (both refer to the X logo),
+\fB:dot\fP or \fB:iconify\fP (both refer to the dot),
+\fB:resize\fP (the nested squares used by the resize button),
+\fB:menu\fP (a page with lines),
+and \fB:question\fP (the question mark used for non-existent
 bitmap files).
 .PP
 The following variables may be specified at the top of a \fItwm\fP startup
@@ -205,7 +234,8 @@ sweeping out window sizes.
 .IP "\fBBorderColor\fP \fIstring\fP [{ \fIwincolorlist\fP }]" 8
 This variable specifies the default color of the border to be placed around 
 all 
-non-iconified windows, and may only be given within a \fBColor\fP or 
+non-iconified windows, and may only be given within a \fBColor\fP,
+\fBGrayscale\fP or
 \fBMonochrome\fP list.  The optional \fIwincolorlist\fP specifies a list
 of window and color name pairs for specifying particular border colors for
 different types of windows.  For example:
@@ -220,14 +250,14 @@ The default is "black".
 .IP "\fBBorderTileBackground\fP \fIstring\fP [{ \fIwincolorlist\fP }]" 8
 This variable specifies the default background color in the gray pattern 
 used in unhighlighted borders (only if \fBNoHighlight\fP hasn't been set),
-and may only be given within a \fBColor\fP or \fBMonochrome\fP list.  The
+and may only be given within a \fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.  The
 optional \fIwincolorlist\fP allows per-window colors to be specified.
 The default  is "white".
 .IP "\fBBorderTileForeground\fP \fIstring\fP [{ \fIwincolorlist\fP }]" 8
 This variable specifies the default foreground color in the gray pattern
 used in unhighlighted borders (only
 if \fBNoHighlight\fP hasn't been set), and may only be given within a 
-\fBColor\fP or \fBMonochrome\fP list.  The optional \fIwincolorlist\fP allows
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.  The optional \fIwincolorlist\fP allows
 per-window colors to be specified.  The default is "black".
 .IP "\fBBorderWidth\fP \fIpixels\fP" 8
 This variable specifies the width in pixels of the border surrounding
@@ -253,8 +283,10 @@ display is capable of displaying more than simple black and white.  The
 \fBMenuBackground\fP,
 \fBMenuForeground\fP,
 \fBMenuTitleBackground\fP,
-\fBMenuTitleForeground\fP, and
-\fBMenuShadowColor\fP.
+\fBMenuTitleForeground\fP,
+\fBMenuShadowColor\fP,
+\fBPointerForeground\fP, and
+\fBPointerBackground\fP.
 The following
 color variables may also be given a list of window and color name pairs to
 allow per-window colors to be specified (see \fBBorderColor\fP for details):
@@ -287,7 +319,7 @@ monochrome displays.
 This variable specifies the length of time between button clicks needed to
 begin
 a constrained move operation.  Double clicking within this amount
-of time when invoking \fBf.move\fP will cause the window only be moved 
+of time when invoking \fBf.move\fP will cause the window to be moved only
 in a horizontal or vertical direction.  Setting this value to 0 will disable
 constrained moves.  The default is 400 milliseconds.
 .IP "\fBCursors\fP { \fIcursor-list\fP }" 8
@@ -300,7 +332,7 @@ Shapes from the \fBcursor\fP font may be specified directly as:
 .EE
 where \fIcursorname\fP is one of the cursor names listed below, and
 \fIstring\fP is the name of a glyph as found in the file
-/usr/include/X11/cursorfont.h (without the ``XC_'' prefix).
+<XRoot>/include/X11/cursorfont.h (without the ``XC_'' prefix).
 If the cursor is to be defined
 from bitmap files, the following syntax is used instead:
 .EX 0
@@ -355,16 +387,19 @@ variable should override any client-supplied pixmaps.
 .IP "\fBFramePadding\fP \fIpixels\fP" 8
 This variable specifies the distance between the titlebar decorations (the
 button and text) and the window frame.  The default is 2 pixels.
+.IP "\fBGrayscale\fP { \fIcolors\fP }" 8
+This variable specifies a list of color assignments that should be made if
+the screen has a GrayScale default visual.  See the description of \fBColors\fP.
 .IP "\fBIconBackground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the background color of icons, and may
-only be specified inside of a \fBColor\fP or \fBMonochrome\fP list.
+only be specified inside of a \fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP.
 The default is "white".
 .IP "\fBIconBorderColor\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the color of the border used for icon windows, and
-may only be specified inside of a \fBColor\fP or \fBMonochrome\fP list.
+may only be specified inside of a \fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP. 
@@ -382,14 +417,14 @@ icons.  The default is "variable".
 .IP "\fBIconForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color to be used when displaying icons,
 and may only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP.
 The default is "black".
 .IP "\fBIconifyByUnmapping [{ \fIwin-list\fP }]\fP" 8
 This variable indicates that windows should be iconified by being unmapped
-without trying to map any icons.  This assumes that the user is will 
+without trying to map any icons.  This assumes that the user will 
 remap the window through the icon manager, the \fBf.warpto\fP function, or
 the \fITwmWindows\fP menu.
 If the optional \fIwin-list\fP is provided, only those windows will be
@@ -399,7 +434,7 @@ to the \fITwmWindows\fP menu is set in the user's startup file.
 .IP "\fBIconManagerBackground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the background color to use for icon manager entries,
 and may only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP.
@@ -416,7 +451,7 @@ entries.  The default is "variable".
 .IP "\fBIconManagerForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color to be used when displaying
 icon manager entries, and may only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP.
@@ -432,7 +467,7 @@ additional rows.  The default number of columns is 1.
 This variable specifies the border color to be used when highlighting
 the icon manager entry that currently has the focus,
 and can only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.  See the \fBBorderColor\fP
 variable for a complete description of the \fIwin-list\fP.
@@ -516,7 +551,8 @@ set.
 .IP "\fBMaxWindowSize\fP \fIstring\fP" 8
 This variable specifies a geometry in which the width and height
 give the maximum size for a given window.  This is typically used to 
-restrict windows to the size of the screen.  The default is "30000x30000".
+restrict windows to the size of the screen.  The default width is 32767 -
+screen width.  The default height is 32767 - screen height.  
 .IP "\fBMenuBackground\fP \fIstring\fP" 8
 This variable specifies the background color used for menus,
 and can only be specified inside of a 
@@ -527,16 +563,16 @@ is "variable".
 .IP "\fBMenuForeground\fP \fIstring\fP" 8
 This variable specifies the foreground color used for menus,
 and can only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.  The default is "black".
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.  The default is "black".
 .IP "\fBMenuShadowColor\fP \fIstring\fP" 8
 This variable specifies the color of the shadow behind pull-down menus
 and can only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.  The default is "black".
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.  The default is "black".
 .IP "\fBMenuTitleBackground\fP \fIstring\fP" 8
 This variable specifies the background color for \fBf.title\fP entries in
 menus, and
 can only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.  The default is "white".
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.  The default is "white".
 .IP "\fBMenuTitleForeground\fP \fIstring\fP" 8
 This variable specifies the foreground color for \fBf.title\fP entries in
 menus and
@@ -570,7 +606,7 @@ location of the pointer.  If the optional \fIwin-list\fP is given, highlighting
 will only be disabled for those windows.
 When the border is highlighted, it will
 be drawn in the current \fBBorderColor\fP.  When the border is not
-highlighted, it will be stippled with an gray pattern using the
+highlighted, it will be stippled with a gray pattern using the
 current \fBBorderTileForeground\fP and \fBBorderTileBackground\fP colors.
 .IP "\fBNoIconManagers\fP" 8
 This variable indicates that no icon manager should be created.
@@ -640,8 +676,12 @@ may be specified:
 }
 .EE
 The default for \fITitleHighlight\fP is to use an even stipple pattern.
+.IP "\fBPriority\fP \fIpriority\fP" 8
+This variable sets \fItwm\fP's priority.  \fIpriority\fP should be an
+unquoted, signed number (e.g. 999).  This variable has an effect only 
+if the server supports the SYNC extension.
 .IP "\fBRandomPlacement\fP" 8
-This variable indicates that windows with no specified geometry should should
+This variable indicates that windows with no specified geometry should 
 be placed in a pseudo-random location instead of having the user drag out
 an outline.
 .IP "\fBResizeFont\fP \fIstring\fP" 8
@@ -722,7 +762,7 @@ resource.
 .IP "\fBTitleBackground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the background color used in titlebars,
 and may only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.
 The default is "white".
@@ -732,12 +772,12 @@ titlebuttons.  This is typically set to 0 to allow titlebuttons to take up as
 much space as possible and to not have a border.
 The default is 1.
 .IP "\fBTitleFont\fP \fIstring\fP" 8
-This variable specifies the font to used for displaying window names in
+This variable specifies the font to be used for displaying window names in
 titlebars.  The default is "variable".
 .IP "\fBTitleForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
 This variable specifies the foreground color used in titlebars, and
 may only be specified inside of a 
-\fBColor\fP or \fBMonochrome\fP list.
+\fBColor\fP, \fBGrayscale\fP or \fBMonochrome\fP list.
 The optional \fIwin-list\fP is a list of window names and colors so that
 per-window colors may be specified.
 The default is "black".
@@ -770,7 +810,7 @@ will only be warped when those windows are deiconified.
 This variable specifies a list of windows along which the \fBf.warpring\fP 
 function cycles.
 .IP "\fBWarpUnmapped\fP" 8
-This variable indicates that that the \fBf.warpto\fP function should deiconify
+This variable indicates that the \fBf.warpto\fP function should deiconify
 any iconified windows it encounters.  This is typically used to make a key
 binding that will pop a particular window (such as \fIxmh\fP), no matter
 where it is.  The default is for \fBf.warpto\fP to ignore iconified windows.
@@ -863,17 +903,17 @@ Button2	=	: iconmgr	: f.iconify
 A user who wanted to be able to manipulate windows from the keyboard could
 use the following bindings:
 .EX 0
-"F1"		=	: all		: f.iconify
-"F2"		=	: all		: f.raiselower
-"F3"		=	: all		: f.warpring "next"
-"F4"		=	: all		: f.warpto "xmh"
-"F5"		=	: all		: f.warpto "emacs"
-"F6"		=	: all		: f.colormap "next"
-"F7"		=	: all		: f.colormap "default"
-"F20"		=	: all		: f.warptoscreen "next"
-"Left"		= m	: all		: f.backiconmgr
+"F1"	=	: all		: f.iconify
+"F2"	=	: all		: f.raiselower
+"F3"	=	: all		: f.warpring "next"
+"F4"	=	: all		: f.warpto "xmh"
+"F5"	=	: all		: f.warpto "emacs"
+"F6"	=	: all		: f.colormap "next"
+"F7"	=	: all		: f.colormap "default"
+"F20"	=	: all		: f.warptoscreen "next"
+"Left"	= m	: all		: f.backiconmgr
 "Right"	= m | s	: all		: f.forwiconmgr
-"Up"		= m	: all		: f.upiconmgr
+"Up"	= m	: all		: f.upiconmgr
 "Down"	= m | s	: all		: f.downiconmgr
 .EE
 \fITwm\fP provides many more window manipulation primitives than can be
@@ -1002,7 +1042,9 @@ This function iconifies or deiconifies the selected window or icon,
 respectively.
 .IP "\fBf.identify\fP" 8
 This function displays a summary of the name and geometry of the
-selected window.  Clicking the pointer or pressing a key in the window
+selected window.  If the server supports the SYNC extension, the priority
+of the client owning the window is also displayed.
+Clicking the pointer or pressing a key in the window
 will dismiss it.
 .IP "\fBf.lefticonmgr\fI" 8
 This function similar to \fBf.backiconmgr\fP except that wrapping does not
@@ -1034,6 +1076,11 @@ or \fBWindowFunction\fP variables or to introduce blank lines in menus.
 .IP "\fBf.previconmgr\fI" 8
 This function warps the pointer to the previous icon manager containing any
 windows on the current or preceding screens.
+.IP "\fBf.priority\fP \fIstring\fP" 8
+This function sets the priority of the client owning the selected window to
+the numeric value of the argument \fIstring\fP, which should be a signed 
+integer in double quotes (e.g. "999" ).  This function has an effect only 
+if the server supports the SYNC extension.
 .IP "\fBf.quit\fP" 8
 This function causes \fItwm\fP to restore the window's borders and exit.  If
 \fItwm\fP is the first client invoked from \fIxdm\fP, this will result in a
@@ -1209,7 +1256,7 @@ they may be lost if they are iconified and no bindings to
 .nf
  $HOME/.twmrc.<screen number>
  $HOME/.twmrc
- /usr/lib/X11/twm/system.twmrc
+ <XRoot>/lib/X11/twm/system.twmrc
 .fi
 .SH "ENVIRONMENT VARIABLES"
 .IP "DISPLAY" 8
@@ -1221,10 +1268,6 @@ for locating the \fItwm\fP startup file.
 .SH "SEE ALSO"
 .PP
 X(1), Xserver(1), xdm(1), xrdb(1)
-.SH COPYRIGHT
-Portions copyright 1988 Evans & Sutherland Computer Corporation; portions
-copyright 1989 Hewlett-Packard Company and the Massachusetts Institute of
-Technology,  See \fIX(1)\fP for a full statement of rights and permissions.
 .SH AUTHORS
 Tom LaStrange, Solbourne Computer; Jim Fulton, MIT X Consortium;
 Steve Pitschke, Stardent Computer; Keith Packard, MIT X Consortium;

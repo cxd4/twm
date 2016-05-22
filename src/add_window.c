@@ -1,7 +1,32 @@
 /*****************************************************************************/
+/*
+
+Copyright (c) 1989  X Consortium
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall not be
+used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization from the X Consortium.
+
+*/
 /**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
 /**                          Salt Lake City, Utah                           **/
-/**  Portions Copyright 1989 by the Massachusetts Institute of Technology   **/
 /**                        Cambridge, Massachusetts                         **/
 /**                                                                         **/
 /**                           All Rights Reserved                           **/
@@ -11,14 +36,14 @@
 /**    granted, provided that the above copyright notice appear  in  all    **/
 /**    copies and that both  that  copyright  notice  and  this  permis-    **/
 /**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    names of Evans & Sutherland and M.I.T. not be used in advertising    **/
+/**    name of Evans & Sutherland not be used in advertising    **/
 /**    in publicity pertaining to distribution of the  software  without    **/
 /**    specific, written prior permission.                                  **/
 /**                                                                         **/
-/**    EVANS & SUTHERLAND AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD    **/
+/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
 /**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND OR    **/
-/**    M.I.T. BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
+/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
+/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
 /**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
 /**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
 /**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
@@ -28,7 +53,7 @@
 
 /**********************************************************************
  *
- * $XConsortium: add_window.c,v 1.153 91/07/10 13:17:26 dave Exp $
+ * $XConsortium: add_window.c,v 1.164 94/12/27 19:16:56 mor Exp $
  *
  * Add a new window, put the titlbar and other stuff around
  * the window
@@ -144,6 +169,13 @@ IconMgr *iconp;
     int gravx, gravy;			/* gravity signs for positioning */
     int namelen;
     int bw2;
+    short saved_x, saved_y, restore_icon_x, restore_icon_y;
+    unsigned short saved_width, saved_height;
+    Bool restore_iconified = 0;
+    Bool restore_icon_info_present = 0;
+    int restoredFromPrevSession;
+    Bool width_ever_changed_by_user;
+    Bool height_ever_changed_by_user;
 
 #ifdef DEBUG
     fprintf(stderr, "AddWindow: w = 0x%x\n", w);
@@ -164,12 +196,43 @@ IconMgr *iconp;
     tmp_win->cmaps.number_cwins = 0;
 
     XSelectInput(dpy, tmp_win->w, PropertyChangeMask);
+
     XGetWindowAttributes(dpy, tmp_win->w, &tmp_win->attr);
+
     XFetchName(dpy, tmp_win->w, &tmp_win->name);
     tmp_win->class = NoClass;
     XGetClassHint(dpy, tmp_win->w, &tmp_win->class);
     FetchWmProtocols (tmp_win);
     FetchWmColormapWindows (tmp_win);
+
+    if (GetWindowConfig (tmp_win,
+	&saved_x, &saved_y, &saved_width, &saved_height,
+	&restore_iconified, &restore_icon_info_present,
+	&restore_icon_x, &restore_icon_y,
+	&width_ever_changed_by_user, &height_ever_changed_by_user))
+    {
+	tmp_win->attr.x = saved_x;
+	tmp_win->attr.y = saved_y;
+
+	tmp_win->widthEverChangedByUser = width_ever_changed_by_user;
+	tmp_win->heightEverChangedByUser = height_ever_changed_by_user;
+	
+	if (width_ever_changed_by_user)
+	    tmp_win->attr.width = saved_width;
+
+	if (height_ever_changed_by_user)
+	    tmp_win->attr.height = saved_height;
+
+	restoredFromPrevSession = 1;
+    }
+    else
+    {
+	tmp_win->widthEverChangedByUser = False;
+	tmp_win->heightEverChangedByUser = False;
+
+	restoredFromPrevSession = 0;
+    }
+
 
     /*
      * do initial clip; should look at window gravity
@@ -180,6 +243,23 @@ IconMgr *iconp;
       tmp_win->attr.height = Scr->MaxWindowHeight;
 
     tmp_win->wmhints = XGetWMHints(dpy, tmp_win->w);
+
+    if (tmp_win->wmhints)
+    {
+	if (restore_iconified)
+	{
+	    tmp_win->wmhints->initial_state = IconicState;
+	    tmp_win->wmhints->flags |= StateHint;
+	}
+
+	if (restore_icon_info_present)
+	{
+	    tmp_win->wmhints->icon_x = restore_icon_x;
+	    tmp_win->wmhints->icon_y = restore_icon_y;
+	    tmp_win->wmhints->flags |= IconPositionHint;
+	}
+    }
+
     if (tmp_win->wmhints && (tmp_win->wmhints->flags & WindowGroupHint)) 
       tmp_win->group = tmp_win->wmhints->window_group;
     else
@@ -192,6 +272,7 @@ IconMgr *iconp;
 
     tmp_win->transient = Transient(tmp_win->w, &tmp_win->transientfor);
 
+    tmp_win->nameChanged = 0;
     if (tmp_win->name == NULL)
 	tmp_win->name = NoName;
     if (tmp_win->class.res_name == NULL)
@@ -295,7 +376,20 @@ IconMgr *iconp;
     }
 
     GetWindowSizeHints (tmp_win);
-    GetGravityOffsets (tmp_win, &gravx, &gravy);
+
+    if (restoredFromPrevSession)
+    {
+	/*
+	 * When restoring window positions from the previous session,
+	 * we always use NorthWest gravity.
+	 */
+
+	gravx = gravy = -1;
+    }
+    else
+    {
+	GetGravityOffsets (tmp_win, &gravx, &gravy);
+    }
 
     /*
      * Don't bother user if:
@@ -318,7 +412,7 @@ IconMgr *iconp;
     /*
      * do any prompting for position
      */
-    if (HandlingEvents && ask_user) {
+    if (HandlingEvents && ask_user && !restoredFromPrevSession) {
       if (Scr->RandomPlacement) {	/* just stick it somewhere */
 	if ((PlaceX + tmp_win->attr.width) > Scr->MyDisplayWidth)
 	    PlaceX = 50;
@@ -404,9 +498,24 @@ IconMgr *iconp;
 
 	    AddingW = tmp_win->attr.width + bw2;
 	    AddingH = tmp_win->attr.height + tmp_win->title_height + bw2;
+  
+  	    if (Scr->DontMoveOff) {
+  		/*
+  		 * Make sure the initial outline comes up on the screen.  
+  		 */
+  		if (AddingX < 0)
+  		    AddingX = 0;
+  		if (AddingX > Scr->MyDisplayWidth - AddingW)
+  		    AddingX = Scr->MyDisplayWidth - AddingW;
+  		      
+  		if (AddingY < 0)
+  		    AddingY = 0;
+  		if (AddingY > Scr->MyDisplayHeight - AddingH)
+  		    AddingY = Scr->MyDisplayHeight - AddingH;
+  	    }
 
-		MoveOutline(Scr->Root, AddingX, AddingY, AddingW, AddingH,
-			    tmp_win->frame_bw, tmp_win->title_height);
+	    MoveOutline(Scr->Root, AddingX, AddingY, AddingW, AddingH,
+	      	        tmp_win->frame_bw, tmp_win->title_height);
 
 	    while (TRUE)
 		{
@@ -795,7 +904,7 @@ IconMgr *iconp;
     /* wait until the window is iconified and the icon window is mapped
      * before creating the icon window 
      */
-    tmp_win->icon_w = NULL;
+    tmp_win->icon_w = (Window) 0;
 
     if (!tmp_win->iconmgr)
     {
@@ -930,7 +1039,7 @@ TwmWindow *tmp_win;
     {
 	for (j = 0; j < MOD_SIZE; j++)
 	{
-	    if (Scr->Mouse[i][C_WINDOW][j].func != NULL)
+	    if (Scr->Mouse[i][C_WINDOW][j].func != 0)
 	    {
 	        /* twm used to do this grab on the application main window,
                  * tmp_win->w . This was not ICCCM complient and was changed.
