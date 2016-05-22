@@ -469,7 +469,7 @@ main(int argc, char *argv[])
 	Scr->d_depth = DefaultDepth(dpy, scrnum);
 	Scr->d_visual = DefaultVisual(dpy, scrnum);
 	Scr->Root = RootWindow(dpy, scrnum);
-	XSaveContext (dpy, Scr->Root, ScreenContext, (caddr_t) Scr);
+	XSaveContext(dpy, Scr->Root, ScreenContext, (void *)Scr);
 
 	Scr->TwmRoot.cmaps.number_cwins = 1;
 	Scr->TwmRoot.cmaps.cwins = malloc(sizeof(ColormapWindow *));

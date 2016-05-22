@@ -249,8 +249,6 @@ AddStartResize(TwmWindow *tmp_win, int x, int y, int w, int h)
     DisplaySize(tmp_win, origWidth, origHeight);
 }
 
-
-
 void
 MenuDoResize(int x_root, int y_root, TwmWindow *tmp_win)
 {
@@ -536,7 +534,7 @@ EndResize(void)
     MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
     XUnmapWindow(dpy, Scr->SizeWindow);
 
-    XFindContext(dpy, ResizeWindow, TwmContext, (caddr_t *)&tmp_win);
+    XFindContext(dpy, ResizeWindow, TwmContext, (char **)&tmp_win);
 
     ConstrainSize (tmp_win, &dragWidth, &dragHeight);
 

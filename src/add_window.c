@@ -913,27 +913,27 @@ AddWindow(Window w, int iconm, IconMgr *iconp)
 
     (void) AddIconManager(tmp_win);
 
-    XSaveContext(dpy, tmp_win->w, TwmContext, (caddr_t) tmp_win);
-    XSaveContext(dpy, tmp_win->w, ScreenContext, (caddr_t) Scr);
-    XSaveContext(dpy, tmp_win->frame, TwmContext, (caddr_t) tmp_win);
-    XSaveContext(dpy, tmp_win->frame, ScreenContext, (caddr_t) Scr);
+    XSaveContext(dpy, tmp_win->w, TwmContext, (void *)tmp_win);
+    XSaveContext(dpy, tmp_win->w, ScreenContext, (void *)Scr);
+    XSaveContext(dpy, tmp_win->frame, TwmContext, (void *)tmp_win);
+    XSaveContext(dpy, tmp_win->frame, ScreenContext, (void *)Scr);
     if (tmp_win->title_height)
     {
 	int i;
 	int nb = Scr->TBInfo.nleft + Scr->TBInfo.nright;
 
-	XSaveContext(dpy, tmp_win->title_w, TwmContext, (caddr_t) tmp_win);
-	XSaveContext(dpy, tmp_win->title_w, ScreenContext, (caddr_t) Scr);
+	XSaveContext(dpy, tmp_win->title_w, TwmContext, (void *)tmp_win);
+	XSaveContext(dpy, tmp_win->title_w, ScreenContext, (void *)Scr);
 	for (i = 0; i < nb; i++) {
 	    XSaveContext(dpy, tmp_win->titlebuttons[i].window, TwmContext,
-			 (caddr_t) tmp_win);
+			 (void *)tmp_win);
 	    XSaveContext(dpy, tmp_win->titlebuttons[i].window, ScreenContext,
-			 (caddr_t) Scr);
+			 (void *)Scr);
 	}
 	if (tmp_win->hilite_w)
 	{
-	    XSaveContext(dpy, tmp_win->hilite_w, TwmContext, (caddr_t)tmp_win);
-	    XSaveContext(dpy, tmp_win->hilite_w, ScreenContext, (caddr_t)Scr);
+	    XSaveContext(dpy, tmp_win->hilite_w, TwmContext, (void *)tmp_win);
+	    XSaveContext(dpy, tmp_win->hilite_w, ScreenContext, (void *)Scr);
 	}
     }
 
@@ -1370,8 +1370,10 @@ CreateTwmColormap(Colormap c)
 {
     TwmColormap *cmap;
     cmap = malloc(sizeof(TwmColormap));
-    if (!cmap ||
-	XSaveContext(dpy, c, ColormapContext, (caddr_t) cmap)) {
+    if (
+	!cmap
+     ||	XSaveContext(dpy, c, ColormapContext, (void *)cmap)
+    ) {
 	if (cmap) free(cmap);
 	return (NULL);
     }
@@ -1392,14 +1394,22 @@ CreateColormapWindow(Window w, Bool creating_parent, Bool property_window)
 
     cwin = malloc(sizeof(ColormapWindow));
     if (cwin) {
-	if (!XGetWindowAttributes(dpy, w, &attributes) ||
-	    XSaveContext(dpy, w, ColormapContext, (caddr_t) cwin)) {
+	if (
+	    !XGetWindowAttributes(dpy, w, &attributes)
+	 || XSaveContext(dpy, w, ColormapContext, (void *)cwin)
+	) {
 	    free(cwin);
 	    return (NULL);
 	}
 
-	if (XFindContext(dpy, attributes.colormap,  ColormapContext,
-		(caddr_t *)&cwin->colormap) == XCNOENT) {
+	if (
+	    XFindContext(
+		dpy,
+		attributes.colormap,
+		ColormapContext,
+		(char **)&(cwin -> colormap)
+	    ) == XCNOENT
+	) {
 	    cwin->colormap = cmap = CreateTwmColormap(attributes.colormap);
 	    if (!cmap) {
 		XDeleteContext(dpy, w, ColormapContext);
@@ -1509,7 +1519,7 @@ FetchWmColormapWindows (TwmWindow *tmp)
 		 */
 		if (j == tmp->cmaps.number_cwins) {
 		    if (XFindContext(dpy, cmap_windows[i], ColormapContext,
-				     (caddr_t *)&cwins[i]) == XCNOENT) {
+				     (char **)&cwins[i]) == XCNOENT) {
 			if ((cwins[i] = CreateColormapWindow(cmap_windows[i],
 				    (Bool) tmp->cmaps.number_cwins == 0,
 				    True)) == NULL) {
@@ -1533,7 +1543,7 @@ FetchWmColormapWindows (TwmWindow *tmp)
 	number_cmap_windows = 1;
 
 	cwins = malloc(sizeof(ColormapWindow *));
-	if (XFindContext(dpy, tmp->w, ColormapContext, (caddr_t *)&cwins[0]) ==
+	if (XFindContext(dpy, tmp->w, ColormapContext, (char **)&cwins[0]) ==
 	    XCNOENT) {
 	    cwins[0] = CreateColormapWindow(tmp->w,
 			    (Bool) tmp->cmaps.number_cwins == 0, False);

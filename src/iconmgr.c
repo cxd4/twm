@@ -429,11 +429,11 @@ WList *AddIconManager(TwmWindow *tmp_win)
     PackIconManager(ip);
     XMapWindow(dpy, tmp->w);
 
-    XSaveContext(dpy, tmp->w, IconManagerContext, (caddr_t) tmp);
-    XSaveContext(dpy, tmp->w, TwmContext, (caddr_t) tmp_win);
-    XSaveContext(dpy, tmp->w, ScreenContext, (caddr_t) Scr);
-    XSaveContext(dpy, tmp->icon, TwmContext, (caddr_t) tmp_win);
-    XSaveContext(dpy, tmp->icon, ScreenContext, (caddr_t) Scr);
+    XSaveContext(dpy, tmp->w, IconManagerContext, (void *)tmp);
+    XSaveContext(dpy, tmp->w, TwmContext, (void *)tmp_win);
+    XSaveContext(dpy, tmp->w, ScreenContext, (void *)Scr);
+    XSaveContext(dpy, tmp->icon, TwmContext, (void *)tmp_win);
+    XSaveContext(dpy, tmp->icon, ScreenContext, (void *)Scr);
     tmp_win->list = tmp;
 
     if (!ip->twm_win->icon)

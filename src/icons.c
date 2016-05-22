@@ -574,8 +574,8 @@ CreateIconWindow(TwmWindow *tmp_win, int def_x, int def_y)
     tmp_win->iconified = TRUE;
 
     XMapSubwindows(dpy, tmp_win->icon_w);
-    XSaveContext(dpy, tmp_win->icon_w, TwmContext, (caddr_t)tmp_win);
-    XSaveContext(dpy, tmp_win->icon_w, ScreenContext, (caddr_t)Scr);
+    XSaveContext(dpy, tmp_win->icon_w, TwmContext, (void *)tmp_win);
+    XSaveContext(dpy, tmp_win->icon_w, ScreenContext, (void *)Scr);
     XDefineCursor(dpy, tmp_win->icon_w, Scr->IconCursor);
     if (pm) XFreePixmap (dpy, pm);
     return;

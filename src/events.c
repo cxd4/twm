@@ -881,8 +881,8 @@ HandlePropertyNotify(void)
 		Tmp_win->icon_w = Tmp_win->wmhints->icon_window;
 		XSelectInput (dpy, Tmp_win->icon_w,
 		  KeyPressMask | ButtonPressMask | ButtonReleaseMask);
-		XSaveContext(dpy, Tmp_win->icon_w, TwmContext, (caddr_t)Tmp_win);
-		XSaveContext(dpy, Tmp_win->icon_w, ScreenContext, (caddr_t)Scr);
+		XSaveContext(dpy, Tmp_win->icon_w, TwmContext, (void *)Tmp_win);
+		XSaveContext(dpy, Tmp_win->icon_w, ScreenContext, (void *)Scr);
 		XDefineCursor(dpy, Tmp_win->icon_w, Scr->IconCursor);
 	    }
 	}
