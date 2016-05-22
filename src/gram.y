@@ -42,13 +42,11 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "twm.h"
-#include <X11/wchar.h>
 #include "menus.h"
 #include "list.h"
 #include "util.h"
 #include "screen.h"
 #include "parse.h"
-#include <X11/Xlib.h>
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
 
@@ -61,8 +59,7 @@ static MenuRoot *GetRoot();
 static Bool CheckWarpScreenArg(), CheckWarpRingArg();
 static Bool CheckColormapArg();
 static void GotButton(), GotKey(), GotTitleButton();
-static wchar_t *wc_ptr;
-static unsigned char *ptr;
+static char *ptr;
 static name_list **list;
 static int cont = 0;
 static int color;
@@ -72,18 +69,13 @@ unsigned int mods_used = (ShiftMask | ControlMask | Mod1Mask);
 extern int do_single_keyword(), do_string_keyword(), do_number_keyword();
 extern name_list **do_colorlist_keyword();
 extern int do_color_keyword(), do_string_savecolor();
-
-extern unsigned char *convert_wctomb();
-
 extern int yylineno;
-
 %}
 
 %union
 {
     int num;
-    wchar_t *wc_ptr;
-    unsigned char *ptr;
+    char *ptr;
 };
 
 %token <num> LB RB LP RP MENUS MENU BUTTON DEFAULT_FUNCTION PLUS MINUS
@@ -99,7 +91,7 @@ extern int yylineno;
 %token <num> NUMBER KEYWORD NKEYWORD CKEYWORD CLKEYWORD FKEYWORD FSKEYWORD 
 %token <num> SKEYWORD DKEYWORD JKEYWORD WINDOW_RING WARP_CURSOR ERRORTOKEN
 %token <num> NO_STACKMODE
-%token <wc_ptr> WC_STRING 
+%token <ptr> STRING 
 
 %type <ptr> string
 %type <num> action button number signed_number full fullkey
@@ -121,14 +113,14 @@ stmt		: error
 		| squeeze
 		| ICON_REGION string DKEYWORD DKEYWORD number number
 					{ AddIconRegion($2, $3, $4, $5, $6); }
-		| ICONMGR_GEOMETRY string number{ if (Scr->FirstTime)
+		| ICONMGR_GEOMETRY string number	{ if (Scr->FirstTime)
 						  {
-						    Scr->iconmgr.geometry=(char *)$2;
+						    Scr->iconmgr.geometry=$2;
 						    Scr->iconmgr.columns=$3;
 						  }
 						}
 		| ICONMGR_GEOMETRY string	{ if (Scr->FirstTime)
-						    Scr->iconmgr.geometry =(char *)$2;
+						    Scr->iconmgr.geometry = $2;
 						}
 		| ZOOM number		{ if (Scr->FirstTime)
 					  {
@@ -150,7 +142,7 @@ stmt		: error
 		| RIGHT_TITLEBUTTON string EQUALS action { 
 					  GotTitleButton ($2, $4, True);
 					}
-		| button string		{ root = GetRoot($2,NULLSTR,NULLSTR);
+		| button string		{ root = GetRoot($2, NULLSTR, NULLSTR);
 					  Scr->Mouse[$1][C_ROOT][0].func = F_MENU;
 					  Scr->Mouse[$1][C_ROOT][0].menu = root;
 					}
@@ -226,8 +218,7 @@ stmt		: error
 					  }
 					  else
 					  {
-					    root = GetRoot(TWM_ROOT,NULLSTR,
-							   NULLSTR);
+					    root = GetRoot(TWM_ROOT,NULLSTR,NULLSTR);
 					    Scr->DefaultFunction.item = 
 						AddToMenu(root,"x",Action,
 							  NULLSTR,$2, NULLSTR, NULLSTR);
@@ -236,8 +227,7 @@ stmt		: error
 					  pull = NULL;
 					}
 		| WINDOW_FUNCTION action { Scr->WindowFunction.func = $2;
-					   root = GetRoot(TWM_ROOT, NULLSTR,
-							  NULLSTR);
+					   root = GetRoot(TWM_ROOT,NULLSTR,NULLSTR);
 					   Scr->WindowFunction.item = 
 						AddToMenu(root,"x",Action,
 							  NULLSTR,$2, NULLSTR, NULLSTR);
@@ -340,9 +330,9 @@ contextkey	: WINDOW		{ cont |= C_WINDOW_BIT; }
 		| META			{ cont |= C_ICONMGR_BIT; }
 		| ALL			{ cont |= C_ALL_BITS; }
 		| OR			{ }
-		| string		{ Name = (char *)$1;
-					  cont |= C_NAME_BIT; }
-		;		
+		| string		{ Name = $1; cont |= C_NAME_BIT; }
+		;
+
 
 pixmap_list	: LB pixmap_entries RB
 		;
@@ -499,11 +489,11 @@ iconm_entries	: /* Empty */
 		| iconm_entries iconm_entry
 		;
 
-iconm_entry	: string string number   { if (Scr->FirstTime)
+iconm_entry	: string string number	{ if (Scr->FirstTime)
 					    AddToList(list, $1, (char *)
-						AllocateIconManager($1,NULLSTR,
+						AllocateIconManager($1, NULLSTR,
 							$2,$3));
-					  }
+					}
 		| string string string number
 					{ if (Scr->FirstTime)
 					    AddToList(list, $1, (char *)
@@ -570,10 +560,10 @@ menu_entry	: string action		{ AddToMenu(root, $1, Action, pull, $2,
 action		: FKEYWORD	{ $$ = $1; }
 		| FSKEYWORD string {
 				$$ = $1;
-				Action = (char *)$2;
+				Action = $2;
 				switch ($1) {
 				  case F_MENU:
-				    pull = GetRoot ($2, NULLSTR, NULLSTR);
+				    pull = GetRoot ($2, NULLSTR,NULLSTR);
 				    pull->prev = root;
 				    break;
 				  case F_WARPRING:
@@ -581,14 +571,14 @@ action		: FKEYWORD	{ $$ = $1; }
 					twmrc_error_prefix();
 					fprintf (stderr,
 			"ignoring invalid f.warptoring argument \"%s\"\n",
-						Action);
+						 Action);
 					$$ = F_NOP;
 				    }
 				  case F_WARPTOSCREEN:
 				    if (!CheckWarpScreenArg (Action)) {
 					twmrc_error_prefix();
 					fprintf (stderr, 
-       		"ignoring invalid f.warptoscreen argument \"%s\"\n", 
+			"ignoring invalid f.warptoscreen argument \"%s\"\n", 
 					         Action);
 					$$ = F_NOP;
 				    }
@@ -626,14 +616,11 @@ button		: BUTTON number		{ $$ = $2;
 					}
 		;
 
-string		: WC_STRING		{ wc_ptr = (wchar_t *)malloc((wcslen($1)+1) * sizeof(wchar_t));
-					  wcscpy(wc_ptr, $1);
-					  RemoveDQuote(wc_ptr);
-					  ptr = convert_wctomb(wc_ptr);
-					  free(wc_ptr);
+string		: STRING		{ ptr = (char *)malloc(strlen($1)+1);
+					  strcpy(ptr, $1);
+					  RemoveDQuote(ptr);
 					  $$ = ptr;
 					}
-
 number		: NUMBER		{ $$ = $1; }
 		;
 
@@ -645,84 +632,91 @@ yyerror(s) char *s;
     ParseError = 1;
 }
 RemoveDQuote(str)
-wchar_t *str;
+char *str;
 {
-    register wchar_t *i, *o;
+    register char *i, *o;
     register n;
     register count;
 
-    for (i=str+1, o=str; *i && *i != _atowc('\"'); o++)
+    for (i=str+1, o=str; *i && *i != '\"'; o++)
     {
-	if (*i == _atowc('\\'))
+	if (*i == '\\')
 	{
-	    ++i;
-	    if (*i == _atowc('n')) {
-		*o = _atowc('\n');
+	    switch (*++i)
+	    {
+	    case 'n':
+		*o = '\n';
 		i++;
-	    } else if (*i == _atowc('b')) {
-		*o = _atowc('\b');
+		break;
+	    case 'b':
+		*o = '\b';
 		i++;
-	    } else if (*i == _atowc('r')) {
-		*o = _atowc('\r');
+		break;
+	    case 'r':
+		*o = '\r';
 		i++;
-	    } else if (*i == _atowc('t')) {
-		*o = _atowc('\t');
+		break;
+	    case 't':
+		*o = '\t';
 		i++;
-	    } else if (*i == _atowc('f')) {
-		*o = _atowc('\f');
+		break;
+	    case 'f':
+		*o = '\f';
 		i++;
-	    } else if (*i == _atowc('0')) { 
-		if (*++i == _atowc('x')) {
+		break;
+	    case '0':
+		if (*++i == 'x')
 		    goto hex;
-		} else {
+		else
 		    --i;
-		}
-	    } else if (_iswdigit(*i)) {
+	    case '1': case '2': case '3':
+	    case '4': case '5': case '6': case '7':
 		n = 0;
 		count = 0;
-		while (*i >= _atowc('0') && *i <= _atowc('7') && 
-		       count < 3)
+		while (*i >= '0' && *i <= '7' && count < 3)
 		{
-		    n = (n<<3) + (*i++ - _atowc('0'));
+		    n = (n<<3) + (*i++ - '0');
 		    count++;
 		}
 		*o = n;
-	    }
+		break;
 	    hex:
-	    if (*i == _atowc('x')) {
+	    case 'x':
 		n = 0;
 		count = 0;
 		while (i++, count++ < 2)
 		{
-		    if (*i >= _atowc('0') && *i <= _atowc('9'))
-			n = (n<<4) + (*i - _atowc('0'));
-		    else if (*i >= _atowc('a') && *i <= _atowc('f'))
-			n = (n<<4) + (*i - _atowc('a')) + 10;
-		    else if (*i >= _atowc('A') && *i <= _atowc('F'))
-			n = (n<<4) + (*i - _atowc('A')) + 10;
+		    if (*i >= '0' && *i <= '9')
+			n = (n<<4) + (*i - '0');
+		    else if (*i >= 'a' && *i <= 'f')
+			n = (n<<4) + (*i - 'a') + 10;
+		    else if (*i >= 'A' && *i <= 'F')
+			n = (n<<4) + (*i - 'A') + 10;
 		    else
 			break;
 		}
 		*o = n;
-	    } else if (*i == _atowc('\n')) {
+		break;
+	    case '\n':
 		i++;	/* punt */
 		o--;	/* to account for o++ at end of loop */
-	    } else if (*i == _atowc('\"') || *i == _atowc('\'')
-		       || *i == _atowc('\\')) {
+		break;
+	    case '\"':
+	    case '\'':
+	    case '\\':
+	    default:
 		*o = *i++;
-	    } else {
-		*o = *i++;
+		break;
 	    }
 	}
-	else {
+	else
 	    *o = *i++;
-	}
     }
-    *o = _atowc('\0');
+    *o = '\0';
 }
 
 static MenuRoot *GetRoot(name, fore, back)
-char *name; 
+char *name;
 char *fore, *back;
 {
     MenuRoot *tmp;

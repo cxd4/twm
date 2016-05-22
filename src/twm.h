@@ -58,6 +58,7 @@ typedef unsigned long Pixel;
 #define SIGNAL_T void
 #define SIGNAL_RETURN return
 #endif
+
 typedef SIGNAL_T (*SigProc)();	/* type of function returned by signal() */
 
 #define BW 2			/* border width */
@@ -121,14 +122,13 @@ typedef SIGNAL_T (*SigProc)();	/* type of function returned by signal() */
     Gcv.background = fix_back;\
     XChangeGC(dpy, Scr->NormalGC, GCForeground|GCBackground,&Gcv)
 
-typedef struct MyFontSet
+typedef struct MyFont
 {
-    XFontSet fontset;		/* XFontSet */
-    char *name;			/* base font name list */
+    char *name;			/* name of the font */
     XFontStruct *font;		/* font structure */
     int height;			/* height of the font */
     int y;			/* Y coordinate to draw characters */
-} MyFontSet;
+} MyFont;
 
 typedef struct ColorPair
 {

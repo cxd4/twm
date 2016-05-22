@@ -1,39 +1,27 @@
-#XCOMM $XConsortium: Imakefile,v 1.33 91/07/17 00:48:06 gildea Exp $
-#XCOMM
-#XCOMM Here is an Imakefile for twm.  It depends on having TWMDIR defined
-#XCOMM in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
-#XCOMM other people do also, so perhaps you could do us all a favor and
-#XCOMM distribute this one.
-#XCOMM
-
-   DEPXWCHARLIB = $(CONTRIBSRC)/lib/Xwchar/libXwchar.a
-      XWCHARLIB = $(DEPXWCHARLIB)
-
-LINKS = cursor.c deftwmrc.c list.c version.c \
-     	add_window.h events.h gc.h iconmgr.h icons.h list.h menus.h \
-	parse.h resize.h util.h version.h icon_name icon_w_width \
-	siconify.bm
+XCOMM $XConsortium: Imakefile,v 1.33 91/07/17 00:48:06 gildea Exp $
+XCOMM
+XCOMM Here is an Imakefile for twm.  It depends on having TWMDIR defined
+XCOMM in Imake.tmpl.  I like to use Imakefiles for everything, and I am sure
+XCOMM other people do also, so perhaps you could do us all a favor and
+XCOMM distribute this one.
+XCOMM
 
          YFLAGS = -d
-        DEPLIBS = $(DEPXMULIB) $(DEPXWCHARLIB) $(DEPEXTENSIONLIB) $(DEPXLIB)
-LOCAL_LIBRARIES = $(XMULIB) $(XWCHARLIB) $(EXTENSIONLIB) $(XLIB)
-       LINTLIBS = $(LINTXMU) $(LINTXWCHARLIB) $(LINTEXTENSIONLIB) $(LINTXLIB)
-        DEFINES = $(SIGNAL_DEFINES -DYYDEBUG -DLEXDEBUG)
+        DEPLIBS = $(DEPXMULIB) $(DEPEXTENSIONLIB) $(DEPXLIB)
+LOCAL_LIBRARIES = $(XMULIB) $(EXTENSIONLIB) $(XLIB)
+       LINTLIBS = $(LINTXMU) $(LINTEXTENSIONLIB) $(LINTXLIB)
+        DEFINES = $(SIGNAL_DEFINES)
 
            SRCS = gram.c lex.c deftwmrc.c add_window.c gc.c list.c twm.c \
-                parse.c menus.c events.c resize.c util.c version.c iconmgr.c \
-                cursor.c icons.c strutil.c
+		parse.c menus.c events.c resize.c util.c version.c iconmgr.c \
+		cursor.c icons.c
 
            OBJS = gram.o lex.o deftwmrc.o add_window.o gc.o list.o twm.o \
-                parse.o menus.o events.o resize.o util.o version.o iconmgr.o \
-                cursor.o icons.o strutil.o
+		parse.o menus.o events.o resize.o util.o version.o iconmgr.o \
+		cursor.o icons.o
 
 AllTarget(twm)
 
-includes::
-	$(RM) $(LINKS)
-	for i in $(LINKS); do (set -x; $(LN) $(CLIENTSRC)/twm/$$i .); done
-	
 SpecialObjectRule(parse.o,NullParameter,'-DSYSTEM_INIT_FILE="'$(TWMDIR)'/system.twmrc"')
 #if !HasPutenv
 SpecialObjectRule(util.o,NullParameter,-DNOPUTENV)
@@ -42,7 +30,6 @@ SpecialObjectRule(util.o,NullParameter,-DNOPUTENV)
 depend:: lex.c gram.c deftwmrc.c 
 
 ComplexProgramTarget(twm)
-
 InstallNonExecFile(system.twmrc,$(TWMDIR))
 
 gram.h gram.c: gram.y
@@ -51,7 +38,7 @@ gram.h gram.c: gram.y
 	$(MV) y.tab.h gram.h
 
 clean::
-	$(RM) y.tab.h y.tab.c gram.h gram.c deftwmrc.c 
+	$(RM) y.tab.h y.tab.c lex.yy.c gram.h gram.c lex.c deftwmrc.c 
 
 deftwmrc.c:  system.twmrc
 	$(RM) $@
@@ -64,10 +51,4 @@ deftwmrc.c:  system.twmrc
 	sed -e '/^#/d' -e 's/"/\\"/g' -e 's/^/    "/' -e 's/$$/",/' \
 		system.twmrc >>$@
 	echo '    (char *) 0 };' >>$@
-
-install::
-	MakeDir($(LIBDIR)/wr_WR.ct/twm)
-	$(INSTALL) -c $(INSTAPPFLAGS) sys.twmrc-ct $(LIBDIR)/wr_WR.ct/twm/system.twmrc
-	MakeDir($(LIBDIR)/ja_JP.ujis/twm)
-	$(INSTALL) -c $(INSTAPPFLAGS) sys.twmrc-uj $(LIBDIR)/ja_JP.ujis/twm/system.twmrc
 

@@ -181,12 +181,12 @@ typedef struct ScreenInfo
     unsigned long Black;
     unsigned long White;
     unsigned long XORvalue;	/* number to use when drawing xor'ed */
-    MyFontSet TitleBarFontSet;	/* title bar fontset structure */
-    MyFontSet MenuFontSet;	/* menu fontset structure */
-    MyFontSet IconFontSet;	/* icon fontset structure */
-    MyFontSet SizeFontSet;	/* resize fontset structure */
-    MyFontSet IconManagerFontSet;	/* window list fontset structure */
-    MyFontSet DefaultFontSet;
+    MyFont TitleBarFont;	/* title bar font structure */
+    MyFont MenuFont;		/* menu font structure */
+    MyFont IconFont;		/* icon font structure */
+    MyFont SizeFont;		/* resize font structure */
+    MyFont IconManagerFont;	/* window list font structure */
+    MyFont DefaultFont;
     IconMgr iconmgr;		/* default icon manager */
     struct IconRegion *FirstRegion;	/* pointer to icon regions */
     struct IconRegion *LastRegion;	/* pointer to the last icon region */

@@ -28,7 +28,7 @@
 
 /***********************************************************************
  *
- * $XConsortium: events.h,v 1.13 90/03/13 15:47:17 jim Exp $
+ * $XConsortium: events.h,v 1.14 91/05/10 17:53:58 dave Exp $
  *
  * twm event handler include file
  *
@@ -48,6 +48,7 @@ extern void SimulateMapRequest();
 extern void AutoRaiseWindow();
 #define LastTimestamp() lastTimestamp
 extern Bool DispatchEvent();
+extern Bool DispatchEvent2();
 extern void HandleEvents();
 extern void HandleExpose();
 extern void HandleDestroyNotify();

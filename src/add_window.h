@@ -28,7 +28,7 @@
 
 /**********************************************************************
  *
- * $XConsortium: add_window.h,v 1.6 89/12/10 17:46:32 jim Exp $
+ * $XConsortium: add_window.h,v 1.7 90/04/17 14:04:33 jim Exp $
  *
  * AddWindow include file
  *
@@ -47,6 +47,7 @@ extern void GrabButtons();
 extern void GrabKeys();
 extern void UngrabButtons();
 extern void UngrabKeys();
+extern void GetWindowSizeHints();
 extern int AddingX;	
 extern int AddingY;
 extern int AddingW;

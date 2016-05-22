@@ -13,11 +13,11 @@
 NoGrabServer
 RestartPreviousState
 DecorateTransients
-TitleFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-ResizeFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-MenuFontSet "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
-IconFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
-IconManagerFontSet "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
+TitleFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+ResizeFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+MenuFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+IconFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
+IconManagerFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
 #ClientBorderWidth
 
 Color

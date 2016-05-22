@@ -136,16 +136,15 @@ Bool fromtitlebar;
     unsigned int junkbw, junkDepth;
 
     ResizeWindow = tmp_win->frame;
-    XGrabServer(dpy); 
-    XGrabPointer(dpy, Scr->Root, True, 
-		 ButtonPressMask | ButtonReleaseMask |
-		 ButtonMotionMask | PointerMotionHintMask,
-		 GrabModeAsync, GrabModeAsync,
-		 Scr->Root, Scr->ResizeCursor, CurrentTime);
+    XGrabServer(dpy);
+    XGrabPointer(dpy, Scr->Root, True,
+        ButtonPressMask | ButtonReleaseMask |
+	ButtonMotionMask | PointerMotionHintMask,
+        GrabModeAsync, GrabModeAsync,
+        Scr->Root, Scr->ResizeCursor, CurrentTime);
 
     XGetGeometry(dpy, (Drawable) tmp_win->frame, &junkRoot,
-		 &dragx, &dragy, (unsigned int *)&dragWidth,
-		 (unsigned int *)&dragHeight, &junkbw,
+        &dragx, &dragy, (unsigned int *)&dragWidth, (unsigned int *)&dragHeight, &junkbw,
                  &junkDepth);
     dragx += tmp_win->frame_bw;
     dragy += tmp_win->frame_bw;
@@ -161,7 +160,7 @@ Bool fromtitlebar;
     Scr->SizeStringOffset = SIZE_HINDENT;
     XResizeWindow (dpy, Scr->SizeWindow,
 		   Scr->SizeStringWidth + SIZE_HINDENT * 2, 
-		   Scr->SizeFontSet.height + SIZE_VINDENT * 2);
+		   Scr->SizeFont.height + SIZE_VINDENT * 2);
     XMapRaised(dpy, Scr->SizeWindow);
     InstallRootColormap();
     last_width = 0;
@@ -182,11 +181,11 @@ int x, y, w, h;
 {
   Window junkRoot;
   unsigned int junkbw, junkDepth;
-  XGrabServer(dpy);
-  XGrabPointer(dpy, Scr->Root, True,
+    XGrabServer(dpy);
+    XGrabPointer(dpy, Scr->Root, True,
         ButtonPressMask | ButtonMotionMask | PointerMotionMask,
         GrabModeAsync, GrabModeAsync,
-        Scr->Root, Scr->ResizeCursor, CurrentTime); 
+        Scr->Root, Scr->ResizeCursor, CurrentTime);
     dragx = x + tmp_win->frame_bw;
     dragy = y + tmp_win->frame_bw;
     origx = dragx;
@@ -199,7 +198,7 @@ int x, y, w, h;
     Scr->SizeStringOffset = SIZE_HINDENT;
     XResizeWindow (dpy, Scr->SizeWindow,
 		   Scr->SizeStringWidth + SIZE_HINDENT * 2, 
-		   Scr->SizeFontSet.height + SIZE_VINDENT * 2);
+		   Scr->SizeFont.height + SIZE_VINDENT * 2);
     XMapRaised(dpy, Scr->SizeWindow);
     DisplaySize(tmp_win, origWidth, origHeight);
     MoveOutline (Scr->Root, dragx - tmp_win->frame_bw,
@@ -225,11 +224,11 @@ AddStartResize(tmp_win, x, y, w, h)
 TwmWindow *tmp_win;
 int x, y, w, h;
 {
-    XGrabServer(dpy); 
+    XGrabServer(dpy);
     XGrabPointer(dpy, Scr->Root, True,
-		 ButtonReleaseMask | ButtonMotionMask | PointerMotionHintMask,
-		 GrabModeAsync, GrabModeAsync,
-		 Scr->Root, Scr->ResizeCursor, CurrentTime);
+        ButtonReleaseMask | ButtonMotionMask | PointerMotionHintMask,
+        GrabModeAsync, GrabModeAsync,
+        Scr->Root, Scr->ResizeCursor, CurrentTime);
 
     dragx = x + tmp_win->frame_bw;
     dragy = y + tmp_win->frame_bw;
@@ -533,10 +532,10 @@ int height;
 
     (void) sprintf (str, " %4d x %-4d ", dwidth, dheight);
     XRaiseWindow(dpy, Scr->SizeWindow);
-    FBF(Scr->DefaultC.fore, Scr->DefaultC.back, Scr->SizeFontSet.font->fid);
+    FBF(Scr->DefaultC.fore, Scr->DefaultC.back, Scr->SizeFont.font->fid);
     XDrawImageString (dpy, Scr->SizeWindow, Scr->NormalGC,
 		      Scr->SizeStringOffset,
-		      Scr->SizeFontSet.font->ascent + SIZE_VINDENT,
+		      Scr->SizeFont.font->ascent + SIZE_VINDENT,
 		      str, 13);
 }
 
@@ -1049,8 +1048,8 @@ int flag;
     ConstrainSize(tmp_win, &dragWidth, &dragHeight);
 
     SetupWindow (tmp_win, dragx , dragy , dragWidth, dragHeight, -1);
-    XUngrabPointer (dpy, CurrentTime); 
-    XUngrabServer (dpy); 
+    XUngrabPointer (dpy, CurrentTime);
+    XUngrabServer (dpy);
 }
 
 SetFrameShape (tmp)

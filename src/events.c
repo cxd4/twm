@@ -39,7 +39,6 @@
 #include <stdio.h>
 #include "twm.h"
 #include <X11/Xatom.h>
-#include <X11/wchar.h>
 #include "add_window.h"
 #include "menus.h"
 #include "events.h"
@@ -50,7 +49,6 @@
 #include "screen.h"
 #include "iconmgr.h"
 #include "version.h"
-
 
 extern int iconifybox_width, iconifybox_height;
 extern unsigned int mods_used;
@@ -96,10 +94,6 @@ void HandleCreateNotify();
 
 void HandleShapeNotify ();
 extern int ShapeEventBase, ShapeErrorBase;
-
-
-XRectangle overall_ink_return;
-XRectangle overall_logical_return;
 
 void AutoRaiseWindow (tmp)
     TwmWindow *tmp;
@@ -739,13 +733,12 @@ void
 HandlePropertyNotify()
 {
     char *prop = NULL;
+    Atom actual = None;
+    int actual_format;
+    unsigned long nitems, bytesafter;
     unsigned long valuemask;		/* mask for create windows */
     XSetWindowAttributes attributes;	/* attributes for create windows */
     Pixmap pm;
-
-    XTextProperty text_prop;
-    char **list;
-    int	count;
 
     /* watch for standard colormap changes */
     if (Event.xproperty.window == Scr->Root) {
@@ -774,25 +767,21 @@ HandlePropertyNotify()
 
     switch (Event.xproperty.atom) {
       case XA_WM_NAME:
-	if (!XGetWMName (dpy, Tmp_win->w, &text_prop))
-	    return;
-	if (text_prop.encoding == None) return;
-	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
-	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
-	    != Success)
-	    return;
-	if (!(*list)) {
-	    prop = NoName;
-	} else {
-	    prop = *list;
-	}
+	if (XGetWindowProperty (dpy, Tmp_win->w, Event.xproperty.atom, 0L, 
+				MAX_NAME_LEN, False, XA_STRING, &actual,
+				&actual_format, &nitems, &bytesafter,
+				(unsigned char **) &prop) != Success ||
+	    actual == None)
+	  return;
+	if (!prop) prop = NoName;
 	free_window_names (Tmp_win, True, True, False);
+
 	Tmp_win->full_name = prop;
 	Tmp_win->name = prop;
-	XmbTextExtents(Scr->TitleBarFontSet.fontset, Tmp_win->name,
-		       strlen(Tmp_win->name),
-		       &overall_ink_return, &overall_logical_return);
-	Tmp_win->name_width = overall_logical_return.width;
+
+	Tmp_win->name_width = XTextWidth (Scr->TitleBarFont.font,
+					  Tmp_win->name,
+					  strlen (Tmp_win->name));
 
 	SetupWindow (Tmp_win, Tmp_win->frame_x, Tmp_win->frame_y,
 		     Tmp_win->frame_width, Tmp_win->frame_height, -1);
@@ -810,20 +799,15 @@ HandlePropertyNotify()
 	break;
 
       case XA_WM_ICON_NAME:
-	if (!XGetWMIconName (dpy, Tmp_win->w, &text_prop))
-	    return;
-	if (text_prop.encoding == None) return;
-	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
-	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
-	    != Success)
-	    return;
-	if (!(*list)) {
-	    prop = NoName;
-	} else {
-	    prop = *list;
-	}
+	if (XGetWindowProperty (dpy, Tmp_win->w, Event.xproperty.atom, 0, 
+				MAX_ICON_NAME_LEN, False, XA_STRING, &actual,
+				&actual_format, &nitems, &bytesafter,
+				(unsigned char **) &prop) != Success ||
+	    actual == None)
+	  return;
+	if (!prop) prop = NoName;
 	free_window_names (Tmp_win, False, False, True);
-	Tmp_win->icon_name = prop; 
+	Tmp_win->icon_name = prop;
 
 	RedoIconName();
 	break;
@@ -971,10 +955,8 @@ RedoIconName()
     if (Tmp_win->icon_not_ours)
 	return;
 
-    XmbTextExtents(Scr->IconFontSet.fontset, Tmp_win->icon_name,
-		   strlen(Tmp_win->icon_name),
-		   &overall_ink_return, &overall_logical_return);
-    Tmp_win->icon_w_width = overall_logical_return.width;
+    Tmp_win->icon_w_width = XTextWidth(Scr->IconFont.font,
+	Tmp_win->icon_name, strlen(Tmp_win->icon_name));
 
     Tmp_win->icon_w_width += 6;
     if (Tmp_win->icon_w_width < Tmp_win->icon_width)
@@ -995,8 +977,8 @@ RedoIconName()
 
     y = 0;
 
-    Tmp_win->icon_w_height = Tmp_win->icon_height + Scr->IconFontSet.height + 4;
-    Tmp_win->icon_y = Tmp_win->icon_height + Scr->IconFontSet.height;
+    Tmp_win->icon_w_height = Tmp_win->icon_height + Scr->IconFont.height + 4;
+    Tmp_win->icon_y = Tmp_win->icon_height + Scr->IconFont.height;
 
     XResizeWindow(dpy, Tmp_win->icon_w, Tmp_win->icon_w_width,
 	Tmp_win->icon_w_height);
@@ -1076,16 +1058,13 @@ HandleExpose()
 	int height;
 
 	FBF(Scr->DefaultC.fore, Scr->DefaultC.back,
-	    Scr->DefaultFontSet.font->fid);
+	    Scr->DefaultFont.font->fid);
 
-	height = Scr->DefaultFontSet.height+2;
+	height = Scr->DefaultFont.height+2;
 	for (i = 0; i < InfoLines; i++)
 	{
-	    XmbDrawString(dpy, Scr->InfoWindow,
-			  Scr->DefaultFontSet.fontset,
-			  Scr->NormalGC,
-			  5, (i*height) + Scr->DefaultFontSet.y, Info[i],
-			  strlen(Info[i]));
+	    XDrawString(dpy, Scr->InfoWindow, Scr->NormalGC,
+		5, (i*height) + Scr->DefaultFont.y, Info[i], strlen(Info[i]));
 	}
 	flush_expose (Event.xany.window);
     } 
@@ -1094,26 +1073,22 @@ HandleExpose()
 	if (Event.xany.window == Tmp_win->title_w)
 	{
 	    FBF(Tmp_win->title.fore, Tmp_win->title.back,
-		Scr->TitleBarFontSet.font->fid);
+		Scr->TitleBarFont.font->fid);
 
-	    XmbDrawString(dpy, Tmp_win->title_w,
-			  Scr->TitleBarFontSet.fontset,
-			  Scr->NormalGC,
-			  Scr->TBInfo.titlex, Scr->TitleBarFontSet.y,
-			  Tmp_win->name, strlen(Tmp_win->name));
+	    XDrawString (dpy, Tmp_win->title_w, Scr->NormalGC,
+			 Scr->TBInfo.titlex, Scr->TitleBarFont.y, 
+			 Tmp_win->name, strlen(Tmp_win->name));
 	    flush_expose (Event.xany.window);
 	}
 	else if (Event.xany.window == Tmp_win->icon_w)
 	{
 	    FBF(Tmp_win->iconc.fore, Tmp_win->iconc.back,
-		Scr->IconFontSet.font->fid);
+		Scr->IconFont.font->fid);
 
-	    XmbDrawString (dpy, Tmp_win->icon_w,
-			   Scr->IconFontSet.fontset,
-			   Scr->NormalGC,
-			   Tmp_win->icon_x, Tmp_win->icon_y,
-			   Tmp_win->icon_name, strlen(Tmp_win->icon_name));
-
+	    XDrawString (dpy, Tmp_win->icon_w,
+		Scr->NormalGC,
+		Tmp_win->icon_x, Tmp_win->icon_y,
+		Tmp_win->icon_name, strlen(Tmp_win->icon_name));
 	    flush_expose (Event.xany.window);
 	    return;
 	} else if (Tmp_win->titlebuttons) {
@@ -1139,15 +1114,10 @@ HandleExpose()
 	    if (Event.xany.window == Tmp_win->list->w)
 	    {
 		FBF(Tmp_win->list->fore, Tmp_win->list->back,
-		    Scr->IconManagerFontSet.font->fid);
-
-		XmbDrawString (dpy, Event.xany.window,
-			       Scr->IconManagerFontSet.fontset, 
-			       Scr->NormalGC, 
-			       iconmgr_textx, Scr->IconManagerFontSet.y+4,
-			       Tmp_win->icon_name,
-			       strlen(Tmp_win->icon_name));
-
+		    Scr->IconManagerFont.font->fid);
+		XDrawString (dpy, Event.xany.window, Scr->NormalGC, 
+		    iconmgr_textx, Scr->IconManagerFont.y+4,
+		    Tmp_win->icon_name, strlen(Tmp_win->icon_name));
 		DrawIconManagerBorder(Tmp_win->list);
 		flush_expose (Event.xany.window);
 		return;
@@ -1417,7 +1387,7 @@ HandleMapNotify()
      * the client would think that the window has a chance of being viewable
      * when it really isn't.
      */
-    XGrabServer (dpy); 
+    XGrabServer (dpy);
     if (Tmp_win->icon_w)
 	XUnmapWindow(dpy, Tmp_win->icon_w);
     if (Tmp_win->title_w)
@@ -1427,7 +1397,7 @@ HandleMapNotify()
 	XUnmapWindow(dpy, Tmp_win->hilite_w);
 
     XMapWindow(dpy, Tmp_win->frame);
-    XUngrabServer (dpy); 
+    XUngrabServer (dpy);
     XFlush (dpy);
     Tmp_win->mapped = TRUE;
     Tmp_win->icon = FALSE;
@@ -1478,7 +1448,7 @@ HandleUnmapNotify()
      * that we've received a DestroyNotify).
      */
 
-    XGrabServer (dpy); 
+    XGrabServer (dpy);
     if (XTranslateCoordinates (dpy, Event.xunmap.window, Tmp_win->attr.root,
 			       0, 0, &dstx, &dsty, &dumwin)) {
 	XEvent ev;
@@ -1500,7 +1470,7 @@ HandleUnmapNotify()
 	XSelectInput (dpy, Event.xunmap.window, NoEventMask);
 	HandleDestroyNotify ();		/* do not need to mash event before */
     } /* else window no longer exists and we'll get a destroy notify */
-    XUngrabServer (dpy); 
+    XUngrabServer (dpy);
     XFlush (dpy);
 }
 
@@ -1700,7 +1670,7 @@ HandleButtonRelease()
 	ResizeWindow == None)
     {
 	XUngrabPointer(dpy, CurrentTime);
- 	XUngrabServer(dpy); 
+	XUngrabServer(dpy);
 	XFlush(dpy);
 	EventHandler[EnterNotify] = HandleEnterNotify;
 	EventHandler[LeaveNotify] = HandleLeaveNotify;
@@ -1726,7 +1696,7 @@ static do_menu (menu, w)
     Bool center;
 
     if (!Scr->NoGrabServer)
- 	XGrabServer(dpy); 
+	XGrabServer(dpy);
     if (w) {
 	int h = Scr->TBInfo.width - Scr->TBInfo.border;
 	Window child;
@@ -1930,9 +1900,9 @@ HandleButtonPress()
 	}
 
 	/* make sure we are not trying to move an identify window */
-        if (Event.xany.window != Scr->InfoWindow)
-            ExecuteFunction(RootFunction, Action, Event.xany.window,
-			    Tmp_win, &Event, Context, FALSE);
+	if (Event.xany.window != Scr->InfoWindow)
+	  ExecuteFunction(RootFunction, Action, Event.xany.window,
+			  Tmp_win, &Event, Context, FALSE);
 
 	RootFunction = NULL;
 	return;

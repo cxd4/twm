@@ -63,7 +63,7 @@ WarpUnmapped			# allow warping to unmapped windows
 
 Pixmaps
 {
-    TitleHighlight "solid4x4"		# make it stand out
+#    TitleHighlight "solid4x4"		# make it stand out
 }
 
 Color
@@ -116,7 +116,8 @@ Button1 =	: iconmgr			: f.iconify
 Button1	= m	: window|icon|frame|title	: f.lower
 Button2	= m	: window			: f.resize
 Button3	= m	: window|icon|frame|title	: f.function "move-or-raise"
-Button1	= c|m|s	: root				: f.refresh
+Button1 = c|m|s	: all				: f.menu "twmops"
+#Button1	= c|m|s	: root				: f.refresh
 #"F20"	=	: all				: f.warptoscreen "next"
 
 "F21"		=	: all			: f.warpring "next"
@@ -126,14 +127,15 @@ Button1	= c|m|s	: root				: f.refresh
 "F24"		=	: all			: f.warpto "xmh"
 "F25"		=	: all			: f.warpto "[expo]"
 "F26"		=	: all			: f.warpto "emacs"
-"KP_Subtract"	=	: all			: f.colormap "next"
-"KP_Add"	=	: all			: f.colormap "default"
-"Home"		=	: all			: f.warptoiconmgr ""
+"KP_Subtract"	= mod5	: all			: f.colormap "prev"
+"KP_Add"	= mod5	: all			: f.colormap "next"
+"KP_Enter"	= mod5	: all			: f.colormap "default"
 "Left"		= m	: all			: f.backiconmgr
 "Right"		= m	: all			: f.forwiconmgr
 "Up"		= m	: all			: f.upiconmgr
 "Down"		= m	: all			: f.downiconmgr
-
+"Left"		= mod5	: all			: f.warpring "prev"
+"Right"		= mod5	: all			: f.warpring "next"
 
 ###############################################################################
 #                                                                             #
@@ -145,6 +147,7 @@ Button1	= c|m|s	: root				: f.refresh
 SortIconManager			# keep them in alphabetic order
 ShowIconManager			# start with iconmgr up
 IconManagerGeometry "700x50+246+2" 14	# strip across top
+IconRegion "200x300+950+2" North East 50 50
 IconifyByUnmapping		# just use icon manager
 IconManagerDontShow		# but ignore these windows
 {
@@ -173,6 +176,11 @@ NoTitle				# little programs that look like icons
   "xcutsel"
 }
 
+NoStackMode			# prevent hostile clients from hosing display
+{
+    "saber"
+}
+
 WindowRing			# f.warpring acts along these windows
 {
     "XTerm"
@@ -198,6 +206,8 @@ menu "twmops"
 "xhost +"		!"xhost + >/dev/null"
 "xhost -"		!"xhost - >/dev/null"
 ""			f.nop
+"Kill"			f.menu "kill"
+""			f.nop
 "Logout"		f.warpto "xlogout"
 }
 
@@ -216,6 +226,11 @@ menu "windowops"
 "Info"			f.identify
 "Focus"			f.focus
 "Unfocus"		f.unfocus
+""			f.nop
+"Show Iconmgr"		f.showiconmgr
+"Hide Iconmgr"		f.hideiconmgr
+"Prev Iconmgr"		f.previconmgr
+"Next Iconmgr"		f.nexticonmgr
 }
 
 menu "windowmenu"
@@ -230,6 +245,6 @@ menu "windowmenu"
 
 menu "kill"
 {
-    "Kill Window"	f.destroy
     "Send Delete"	f.delete
+    "Kill Window"	f.destroy
 }

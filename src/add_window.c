@@ -66,8 +66,6 @@ static void CreateWindowTitlebarButtons();
 
 char NoName[] = "Untitled"; /* name if no name is specified */
 
-XRectangle overall_ink_return;
-XRectangle overall_logical_return;
 
 /************************************************************************
  *
@@ -147,10 +145,6 @@ IconMgr *iconp;
     int namelen;
     int bw2;
 
-    XTextProperty text_prop;
-    char **list;
-    int count;
-
 #ifdef DEBUG
     fprintf(stderr, "AddWindow: w = 0x%x\n", w);
 #endif
@@ -171,19 +165,7 @@ IconMgr *iconp;
 
     XSelectInput(dpy, tmp_win->w, PropertyChangeMask);
     XGetWindowAttributes(dpy, tmp_win->w, &tmp_win->attr);
-    if (!XGetWMName(dpy, tmp_win->w, &text_prop))
-	tmp_win->name = NoName;
-    else {
-	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
-	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
-	    != Success)
-	    tmp_win->name = NoName;
-	else {
-	    if (!(*list)) tmp_win->name = NoName;
-	    else tmp_win->name = *list;
-	}
-    }
-
+    XFetchName(dpy, tmp_win->w, &tmp_win->name);
     tmp_win->class = NoClass;
     XGetClassHint(dpy, tmp_win->w, &tmp_win->class);
     FetchWmProtocols (tmp_win);
@@ -217,7 +199,7 @@ IconMgr *iconp;
     if (tmp_win->class.res_class == NULL)
     	tmp_win->class.res_class = NoName;
 
-    tmp_win->full_name = tmp_win->name;	
+    tmp_win->full_name = tmp_win->name;
     namelen = strlen (tmp_win->name);
 
     tmp_win->highlight = Scr->Highlight && 
@@ -358,9 +340,9 @@ IconMgr *iconp;
 	     */
 	    while (TRUE)
 	    {
- 		XUngrabServer(dpy); 
+		XUngrabServer(dpy);
 		XSync(dpy, 0);
-		XGrabServer(dpy); 
+		XGrabServer(dpy);
 
 		JunkMask = 0;
 		if (!XQueryPointer (dpy, Scr->Root, &JunkRoot, 
@@ -395,36 +377,30 @@ IconMgr *iconp;
 		/* 
 		 * this will cause a warp to the indicated root
 		 */
- 		stat = XGrabPointer(dpy, Scr->Root, False,
+		stat = XGrabPointer(dpy, Scr->Root, False,
 		    ButtonPressMask | ButtonReleaseMask |
 		    PointerMotionMask | PointerMotionHintMask,
 		    GrabModeAsync, GrabModeAsync,
-		    Scr->Root, UpperLeftCursor, CurrentTime); 
+		    Scr->Root, UpperLeftCursor, CurrentTime);
 
 		if (stat == GrabSuccess)
 		    break;
 	    }
 
-	    XmbTextExtents(Scr->SizeFontSet.fontset, tmp_win->name,
-			   namelen, &overall_ink_return,
-			   &overall_logical_return);
-	    width = (SIZE_HINDENT + overall_logical_return.width);
-
-	    height = Scr->SizeFontSet.height + SIZE_VINDENT * 2;
+	    width = (SIZE_HINDENT + XTextWidth (Scr->SizeFont.font,
+						tmp_win->name, namelen));
+	    height = Scr->SizeFont.height + SIZE_VINDENT * 2;
 	    
 	    XResizeWindow (dpy, Scr->SizeWindow, width + SIZE_HINDENT, height);
 	    XMapRaised(dpy, Scr->SizeWindow);
 	    InstallRootColormap();
 
 	    FBF(Scr->DefaultC.fore, Scr->DefaultC.back,
-		Scr->SizeFontSet.font->fid);
-
-	    XmbDrawImageString (dpy, Scr->SizeWindow, 
-				Scr->SizeFontSet.fontset,
-				Scr->NormalGC,
-				SIZE_HINDENT,
-				SIZE_VINDENT + Scr->SizeFontSet.font->ascent,
-				tmp_win->name, namelen);
+		Scr->SizeFont.font->fid);
+	    XDrawImageString (dpy, Scr->SizeWindow, Scr->NormalGC,
+			      SIZE_HINDENT,
+			      SIZE_VINDENT + Scr->SizeFont.font->ascent,
+			      tmp_win->name, namelen);
 
 	    AddingW = tmp_win->attr.width + bw2;
 	    AddingH = tmp_win->attr.height + tmp_win->title_height + bw2;
@@ -503,19 +479,13 @@ IconMgr *iconp;
 	    if (event.xbutton.button == Button2) {
 		int lastx, lasty;
 
-		XmbTextExtents(Scr->SizeFontSet.fontset, ": ", 2,
-			       &overall_ink_return,
-			       &overall_logical_return);
 		Scr->SizeStringOffset = width +
-		    overall_logical_return.width;
+		  XTextWidth(Scr->SizeFont.font, ": ", 2);
 		XResizeWindow (dpy, Scr->SizeWindow, Scr->SizeStringOffset +
 			       Scr->SizeStringWidth, height);
-		XmbDrawImageString(dpy, Scr->SizeWindow,
-				   Scr->SizeFontSet.fontset,
-				   Scr->NormalGC,
-				   width,
-				   SIZE_VINDENT + Scr->SizeFontSet.font->ascent,
-				   ": ", 2);
+		XDrawImageString (dpy, Scr->SizeWindow, Scr->NormalGC, width,
+				  SIZE_VINDENT + Scr->SizeFont.font->ascent,
+				  ": ", 2);
 		if (0/*Scr->AutoRelativeResize*/) {
 		    int dx = (tmp_win->attr.width / 4);
 		    int dy = (tmp_win->attr.height / 4);
@@ -606,14 +576,14 @@ IconMgr *iconp;
 	    MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
 	    XUnmapWindow(dpy, Scr->SizeWindow);
 	    UninstallRootColormap();
- 	    XUngrabPointer(dpy, CurrentTime); 
+	    XUngrabPointer(dpy, CurrentTime);
 
 	    tmp_win->attr.x = AddingX;
 	    tmp_win->attr.y = AddingY + tmp_win->title_height;
 	    tmp_win->attr.width = AddingW - bw2;
 	    tmp_win->attr.height = AddingH - tmp_win->title_height - bw2;
 
- 	    XUngrabServer(dpy); 
+	    XUngrabServer(dpy);
 	}
       }
     } else {				/* put it where asked, mod title bar */
@@ -639,29 +609,23 @@ IconMgr *iconp;
     tmp_win->title_width = tmp_win->attr.width;
 
     if (tmp_win->old_bw) XSetWindowBorderWidth (dpy, tmp_win->w, 0);
- 
-    XmbTextExtents(Scr->TitleBarFontSet.fontset, tmp_win->name,
-		   namelen, &overall_ink_return, &overall_logical_return);
-    tmp_win->name_width = overall_logical_return.width;
 
-    if (!XGetWMIconName (dpy, tmp_win->w, &text_prop))
+    tmp_win->name_width = XTextWidth(Scr->TitleBarFont.font, tmp_win->name,
+				     namelen);
+
+    if (XGetWindowProperty (dpy, tmp_win->w, XA_WM_ICON_NAME, 0L, 200L, False,
+			    XA_STRING, &actual_type, &actual_format, &nitems,
+			    &bytesafter,(unsigned char **)&tmp_win->icon_name))
 	tmp_win->icon_name = tmp_win->name;
-    else {
-	if (text_prop.value) text_prop.nitems = strlen(text_prop.value);
-	if (XmbTextPropertyToTextList(dpy, &text_prop, &list, &count)
-	    != Success)
-	    tmp_win->icon_name = tmp_win->name;
-	else {
-	    if (!(*list)) tmp_win->icon_name = tmp_win->name;
-	    else tmp_win->icon_name = *list;
-	}
-    }
+
+    if (tmp_win->icon_name == NULL)
+	tmp_win->icon_name = tmp_win->name;
 
     tmp_win->iconified = FALSE;
     tmp_win->icon = FALSE;
     tmp_win->icon_on = FALSE;
 
-    XGrabServer(dpy); 
+    XGrabServer(dpy);
 
     /*
      * Make sure the client window still exists.  We don't want to leave an
@@ -674,7 +638,7 @@ IconMgr *iconp;
 		     &JunkWidth, &JunkHeight, &JunkBW, &JunkDepth) == 0)
     {
 	free((char *)tmp_win);
- 	XUngrabServer(dpy); 
+	XUngrabServer(dpy);
 	return(NULL);
     }
 
@@ -835,8 +799,8 @@ IconMgr *iconp;
 
     if (!tmp_win->iconmgr)
     {
- 	GrabButtons(tmp_win); 
- 	GrabKeys(tmp_win); 
+	GrabButtons(tmp_win);
+	GrabKeys(tmp_win);
     }
 
     (void) AddIconManager(tmp_win);
@@ -865,13 +829,13 @@ IconMgr *iconp;
 	}
     }
 
-    XUngrabServer(dpy); 
+    XUngrabServer(dpy);
 
     /* if we were in the middle of a menu activated function, regrab
      * the pointer 
      */
     if (RootFunction)
-	ReGrab(); 
+	ReGrab();
 
     return (tmp_win);
 }
@@ -1042,7 +1006,7 @@ TwmWindow *tmp_win;
 	{
 	    for (p = &Scr->iconmgr; p != NULL; p = p->next)
 	    {
-		XUngrabKey(dpy, tmp->keycode, tmp->mods, p->twm_win->w); 
+		XUngrabKey(dpy, tmp->keycode, tmp->mods, p->twm_win->w);
 	    }
 	}
     }
@@ -1136,7 +1100,6 @@ void ComputeCommonTitleOffsets ()
 
 void ComputeWindowTitleOffsets (tmp_win, width, squeeze)
     TwmWindow *tmp_win;
-    int width;
     Bool squeeze;
 {
     tmp_win->highlightx = (Scr->TBInfo.titlex + tmp_win->name_width);

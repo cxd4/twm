@@ -99,51 +99,21 @@ Much of \fItwm\fP's appearance and behavior can be controlled by providing
 a startup file in one of the following locations (searched in order for
 each screen being managed when \fItwm\fP begins):
 .TP 8
-.B "$HOME/\fI$LANG(full-name)\fP/.twmrc.\fIscreennumber\fP"
-The \fI$LANG(full-name)\fP is the name of the predefined setting for
-locale. If the value of locale is set, Multibyte string can use in the
-startup file. Locale has a expression style as "lang_territory.codeset".
-For example:
-.EX 0
-wr_WR.ct
-ja_JP.ujis
-zh_CN.ugb
-ko_KR.euc
-.EE
-The \fIscreennumber\fP is a small positive number (e.g 0, 1, etc.)
-representing the screen number (e.g. the last number in the DISPLAY
-environments variable \fIhost:displaynum.screennum\fP) that would be
-used to contact that screen of the display.  This is intended for 
-displays with multiple screens of differing visual types.
-.TP 8
-.B "$HOME/$LANG(full-name)/.twmrc"
-.TP 8
-.B "$HOME/\fI$LANG(non-codeset)\fP/.twmrc.screennumber"
-The  \fI$LANG(non-codeset)\fP means a abbreviation of codeset in
-the locale. For example:
-.EX 0
-wr_WR
-ja_JP
-zh_CN
-ko_KR
-.EE
-.TP 8
-.B "$HOME/$LANG(non-codeset)/.twmrc"
-.TP 8
-.B "$HOME/.twmrc.screennumber"
+.B "$HOME/.twmrc.\fIscreennumber\fP"
+The \fIscreennumber\fP is a small positive number (e.g. 0, 1, etc.)
+representing the screen number (e.g. the last number in the DISPLAY environment
+variable \fIhost:displaynum.screennum\fP) that would be used to contact that 
+screen of the display.  This is intended for displays with multiple screens of 
+differing visual types.
 .TP 8
 .B "$HOME/.twmrc"
 This is the usual name for an individual user's startup file.
 .TP 8
-.B "/usr/lib/X11/$LANG(full-name)/system.twmrc"
-.TP 8
-.B "/usr/lib/X11/$LANG(non-codeset)/twm/system.twmrc"
-.TP 8
 .B "/usr/lib/X11/twm/system.twmrc"
-If neither of the preceding files are found, \fItwm\fP will look in 
-one of these three files for a default configuration.
-This is often tailored by the site administrator to provide convenient
-menus or familiar bindings for novice users.
+If neither of the preceding files are found, \fItwm\fP will look in this
+file for a 
+default configuration.  This is often tailored by the site administrator to
+provide convenient menus or familiar bindings for novice users.
 .PP
 If no startup files are found, \fItwm\fP will use the built-in defaults
 described above.  The only resource used by \fItwm\fP is 
@@ -192,7 +162,7 @@ or
 When a variable containing a list of strings representing windows is searched 
 (e.g. to determine whether or not to enable autoraise as shown above), a string
 must be an exact, case-sensitive match to
-the window's name (given by the WM_NAME window property), resource name 
+the window's name name (given by the WM_NAME window property), resource name 
 or class name (both given by the WM_CLASS window property).  The preceding
 example would enable autoraise on windows named ``emacs'' as well as any
 \fIxterm\fP (since they are of class ``XTerm'') or xmh windows 
@@ -222,7 +192,7 @@ enabled or disabled on individual windows using the function \fBf.autoraise\fP.
 This variable indicates that dragging out a window size (either when
 initially sizing the window with pointer Button2 or when resizing it) 
 should not wait until the pointer has crossed the window edges.
-pInstead, moving
+Instead, moving
 the pointer automatically causes the nearest edge or edges to move by the
 same amount.  This allows the resizing of windows that extend off 
 the edge of the screen.
@@ -406,7 +376,7 @@ icon windows.  The default is 2.
 This variable specifies the directory that should be searched if 
 if a bitmap file cannot be found in any of the directories
 in the \fBbitmapFilePath\fP resource.
-.IP "\fBIconFontSet\fP \fIstring\fP" 8
+.IP "\fBIconFont\fP \fIstring\fP" 8
 This variable specifies the font to be used to display icon names within
 icons.  The default is "variable".
 .IP "\fBIconForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
@@ -440,7 +410,7 @@ windows.  If the optional \fIwin-list\fP is given, only those windows will
 not be displayed.  This variable is used to prevent windows that are rarely
 iconified (such as \fIxclock\fP or \fIxload\fP) from taking up space in
 the icon manager.
-.IP "\fBIconManagerFontSet\fP \fIstring\fP" 8
+.IP "\fBIconManagerFont\fP \fIstring\fP" 8
 This variable specifies the font to be used when displaying icon manager
 entries.  The default is "variable".
 .IP "\fBIconManagerForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
@@ -551,7 +521,7 @@ restrict windows to the size of the screen.  The default is "30000x30000".
 This variable specifies the background color used for menus,
 and can only be specified inside of a 
 \fBColor\fP or \fBMonochrome\fP list.  The default is "white".
-.IP "\fBMenuFontSet\fP \fIstring\fP" 8
+.IP "\fBMenuFont\fP \fIstring\fP" 8
 This variable specifies the font to use when displaying menus.  The default
 is "variable".
 .IP "\fBMenuForeground\fP \fIstring\fP" 8
@@ -671,10 +641,10 @@ may be specified:
 .EE
 The default for \fITitleHighlight\fP is to use an even stipple pattern.
 .IP "\fBRandomPlacement\fP" 8
-This variable indicates that windows with no specified geometry should 
+This variable indicates that windows with no specified geometry should should
 be placed in a pseudo-random location instead of having the user drag out
 an outline.
-.IP "\fBResizeFontSet\fP \fIstring\fP" 8
+.IP "\fBResizeFont\fP \fIstring\fP" 8
 This variable specifies the font to be used for in the dimensions window when
 resizing windows.  The default is "fixed".
 .IP "\fBRestartPreviousState\fP" 8
@@ -761,7 +731,7 @@ This variable specifies the width in pixels of the border surrounding
 titlebuttons.  This is typically set to 0 to allow titlebuttons to take up as
 much space as possible and to not have a border.
 The default is 1.
-.IP "\fBTitleFontSet\fP \fIstring\fP" 8
+.IP "\fBTitleFont\fP \fIstring\fP" 8
 This variable specifies the font to used for displaying window names in
 titlebars.  The default is "variable".
 .IP "\fBTitleForeground\fP \fIstring\fP [{ \fIwin-list\fP }]" 8
@@ -800,7 +770,7 @@ will only be warped when those windows are deiconified.
 This variable specifies a list of windows along which the \fBf.warpring\fP 
 function cycles.
 .IP "\fBWarpUnmapped\fP" 8
-This variable indicates that the \fBf.warpto\fP function should deiconify
+This variable indicates that that the \fBf.warpto\fP function should deiconify
 any iconified windows it encounters.  This is typically used to make a key
 binding that will pop a particular window (such as \fIxmh\fP), no matter
 where it is.  The default is for \fBf.warpto\fP to ignore iconified windows.
@@ -850,7 +820,7 @@ or
 \fBRightTitleButton\fP "\fIbitmapname\fP"	= \fIfunction\fP
 .EE
 The \fIbitmapname\fP may refer to one of the  built-in bitmaps
-(which are scaled to match \fBTitleFontSet\fP) by using the appropriate
+(which are scaled to match \fBTitleFont\fP) by using the appropriate
 colon-prefixed name described above.
 .PP
 Key and pointer button specifications must give the modifiers that must
@@ -1237,14 +1207,8 @@ they may be lost if they are iconified and no bindings to
 .SH FILES
 .PP
 .nf
- $HOME/$LANG(full-name)/.twmrc.<screen number>
- $HOME/$LANG(full-name)/.twmrc
- $HOME/$LANG(non-codeset)/.twmrc.<screen number>
- $HOME/$LANG(non-codeset)/.twmrc
  $HOME/.twmrc.<screen number>
  $HOME/.twmrc
- /usr/lib/X11/$LANG(full-name)/twm/system.twmrc
- /usr/lib/X11/$LANG(non-codeset)/twm/system.twmrc
  /usr/lib/X11/twm/system.twmrc
 .fi
 .SH "ENVIRONMENT VARIABLES"
@@ -1254,10 +1218,6 @@ during \fBf.exec\fP so that programs come up on the proper screen.
 .IP "HOME" 8
 This variable is used as the prefix for files that begin with a tilde and
 for locating the \fItwm\fP startup file.
-.IP "LANG" 8
-This variable is used for searching the \fItwm\fP startup file. This variable
-means predefined setting for locale, and has a style of
-lang_territory.codeset.
 .SH "SEE ALSO"
 .PP
 X(1), Xserver(1), xdm(1), xrdb(1)

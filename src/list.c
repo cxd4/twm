@@ -28,7 +28,7 @@
 
 /**********************************************************************
  *
- * $XConsortium: list.c,v 1.18 90/03/13 15:28:51 jim Exp $
+ * $XConsortium: list.c,v 1.20 91/01/09 17:13:30 rws Exp $
  *
  * TWM code to deal with the name lists for the NoTitle list and
  * the AutoRaise list
@@ -37,16 +37,17 @@
  *
  **********************************************************************/
 
-#if !defined(lint) && !defined(SABER)
-static char RCSinfo[]=
-"$XConsortium: list.c,v 1.18 90/03/13 15:28:51 jim Exp $";
-#endif
-
 #include <stdio.h>
 #include "twm.h"
 #include "screen.h"
 #include "gram.h"
-#include "list.h"
+
+struct name_list_struct
+{
+    name_list *next;		/* pointer to the next name */
+    char *name;			/* the name of the window */
+    char *ptr;			/* list dependent data */
+};
 
 /***********************************************************************
  *
@@ -88,7 +89,6 @@ char *ptr;
 
     nptr->next = *list_head;
     nptr->name = name;
-    nptr->namelen = strlen(name);
     nptr->ptr = (ptr == NULL) ? (char *)TRUE : ptr;
     *list_head = nptr;
 }    
@@ -120,26 +120,20 @@ XClassHint *class;
 
     /* look for the name first */
     for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-    {
-	if (strncmp(name, nptr->name, nptr->namelen) == 0)
+	if (strcmp(name, nptr->name) == 0)
 	    return (nptr->ptr);
-    }
 
     if (class)
     {
 	/* look for the res_name next */
 	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-	{
-	    if (strncmp(class->res_name, nptr->name, nptr->namelen) == 0)
+	    if (strcmp(class->res_name, nptr->name) == 0)
 		return (nptr->ptr);
-	}
 
 	/* finally look for the res_class */
 	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-	{
-	    if (strncmp(class->res_class, nptr->name, nptr->namelen) == 0)
+	    if (strcmp(class->res_class, nptr->name) == 0)
 		return (nptr->ptr);
-	}
     }
     return (NULL);
 }
@@ -155,7 +149,7 @@ char *name;
 /***********************************************************************
  *
  *  Procedure:
- *	GetFromList - look through a list for a window name, or class
+ *	GetColorFromList - look through a list for a window name, or class
  *
  *  Returned Value:
  *	TRUE if the name was found
@@ -182,11 +176,7 @@ Pixel *ptr;
     name_list *nptr;
 
     for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-    {
-	int len;
-
-	len = strlen(nptr->name);
-	if (strncmp(name, nptr->name, len) == 0)
+	if (strcmp(name, nptr->name) == 0)
 	{
 	    save = Scr->FirstTime;
 	    Scr->FirstTime = TRUE;
@@ -194,15 +184,11 @@ Pixel *ptr;
 	    Scr->FirstTime = save;
 	    return (TRUE);
 	}
-    }
+
     if (class)
     {
 	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-	{
-	    int len;
-
-	    len = strlen(nptr->name);
-	    if (strncmp(class->res_name, nptr->name, len) == 0)
+	    if (strcmp(class->res_name, nptr->name) == 0)
 	    {
 		save = Scr->FirstTime;
 		Scr->FirstTime = TRUE;
@@ -210,14 +196,9 @@ Pixel *ptr;
 		Scr->FirstTime = save;
 		return (TRUE);
 	    }
-	}
 
 	for (nptr = list_head; nptr != NULL; nptr = nptr->next)
-	{
-	    int len;
-
-	    len = strlen(nptr->name);
-	    if (strncmp(class->res_class, nptr->name, len) == 0)
+	    if (strcmp(class->res_class, nptr->name) == 0)
 	    {
 		save = Scr->FirstTime;
 		Scr->FirstTime = TRUE;
@@ -225,7 +206,6 @@ Pixel *ptr;
 		Scr->FirstTime = save;
 		return (TRUE);
 	    }
-	}
     }
     return (FALSE);
 }
@@ -238,7 +218,7 @@ Pixel *ptr;
  ***********************************************************************
  */
 
-FreeList(list)
+void FreeList(list)
 name_list **list;
 {
     name_list *nptr;

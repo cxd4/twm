@@ -40,7 +40,6 @@
 #include <signal.h>
 #include <fcntl.h>
 #include "twm.h"
-#include <X11/wchar.h>
 #include "add_window.h"
 #include "gc.h"
 #include "parse.h"
@@ -53,7 +52,6 @@
 #include "iconmgr.h"
 #include <X11/Xproto.h>
 #include <X11/Xatom.h>
-#include <X11/Xlocale.h>
 
 Display *dpy;			/* which display are we talking to */
 Window ResizeWindow;		/* the window we are resizing */
@@ -111,10 +109,6 @@ Bool RestartPreviousState = False;	/* try to restart in previous state */
 unsigned long black, white;
 
 extern void assign_var_savecolor();
-extern wchar_t *convert_mbtowc();
-
-XRectangle overall_ink_return;
-XRectangle overall_logical_return;
 
 /***********************************************************************
  *
@@ -143,8 +137,6 @@ main(argc, argv, environ)
     Argv = argv;
     Environ = environ;
 
-    setlocale(LC_ALL,""); 
-    XSetLocaleModifiers("");
     for (i = 1; i < argc; i++) {
 	if (argv[i][0] == '-') {
 	    switch (argv[i][1]) {
@@ -246,8 +238,8 @@ main(argc, argv, environ)
     for (scrnum = firstscrn ; scrnum <= lastscrn; scrnum++)
     {
         /* Make sure property priority colors is empty */
-	XChangeProperty(dpy, RootWindow(dpy, scrnum), _XA_MIT_PRIORITY_COLORS,
-			XA_CARDINAL, 32, PropModeReplace, NULL, 0);
+        XChangeProperty (dpy, RootWindow(dpy, scrnum), _XA_MIT_PRIORITY_COLORS,
+			 XA_CARDINAL, 32, PropModeReplace, NULL, 0);
 	RedirectError = FALSE;
 	XSetErrorHandler(CatchRedirectError);
 	XSelectInput(dpy, RootWindow (dpy, scrnum),
@@ -413,14 +405,14 @@ main(argc, argv, environ)
 	CreateGCs();
 	MakeMenus();
 
-	Scr->TitleBarFontSet.y += Scr->FramePadding;
-	Scr->TitleHeight = Scr->TitleBarFontSet.height + Scr->FramePadding * 2;
+	Scr->TitleBarFont.y += Scr->FramePadding;
+	Scr->TitleHeight = Scr->TitleBarFont.height + Scr->FramePadding * 2;
 	/* make title height be odd so buttons look nice and centered */
 	if (!(Scr->TitleHeight & 1)) Scr->TitleHeight++;
 
 	InitTitlebarButtons ();		/* menus are now loaded! */
 
-	XGrabServer(dpy); 
+	XGrabServer(dpy);
 	XSync(dpy, 0);
 
 	JunkX = 0;
@@ -490,21 +482,21 @@ main(argc, argv, environ)
 					 (unsigned int) CopyFromParent,
 					 (Visual *) CopyFromParent,
 					 valuemask, &attributes);
-	XmbTextExtents(Scr->SizeFontSet.fontset, " 8888 x 8888 ", 13,
-		       &overall_ink_return, &overall_logical_return);
-	Scr->SizeStringWidth = overall_logical_return.width;
+
+	Scr->SizeStringWidth = XTextWidth (Scr->SizeFont.font,
+					   " 8888 x 8888 ", 13);
 	valuemask = (CWBorderPixel | CWBackPixel | CWBitGravity);
 	attributes.bit_gravity = NorthWestGravity;
 	Scr->SizeWindow = XCreateWindow (dpy, Scr->Root, 0, 0, 
 					 (unsigned int) Scr->SizeStringWidth,
-					 (unsigned int) (Scr->SizeFontSet.height +
+					 (unsigned int) (Scr->SizeFont.height +
 							 SIZE_VINDENT*2),
 					 (unsigned int) BW, 0,
 					 (unsigned int) CopyFromParent,
 					 (Visual *) CopyFromParent,
 					 valuemask, &attributes);
 
-	XUngrabServer(dpy); 
+	XUngrabServer(dpy);
 
 	FirstScreen = FALSE;
     	Scr->FirstTime = FALSE;
@@ -650,36 +642,30 @@ InitVariables()
 #define DEFAULT_NICE_FONT "variable"
 #define DEFAULT_FAST_FONT "fixed"
 
-    Scr->TitleBarFontSet.fontset = NULL;
-    Scr->TitleBarFontSet.font = NULL;
-    Scr->TitleBarFontSet.name = DEFAULT_NICE_FONT;
-    Scr->MenuFontSet.fontset = NULL;
-    Scr->MenuFontSet.font = NULL;
-    Scr->MenuFontSet.name = DEFAULT_NICE_FONT;
-    Scr->IconFontSet.fontset = NULL;
-    Scr->IconFontSet.font = NULL;
-    Scr->IconFontSet.name = DEFAULT_NICE_FONT;
-    Scr->SizeFontSet.fontset = NULL;
-    Scr->SizeFontSet.font = NULL;
-    Scr->SizeFontSet.name = DEFAULT_FAST_FONT;
-    Scr->IconManagerFontSet.fontset = NULL;
-    Scr->IconManagerFontSet.font = NULL;
-    Scr->IconManagerFontSet.name = DEFAULT_NICE_FONT;
-    Scr->DefaultFontSet.fontset = NULL;
-    Scr->DefaultFontSet.font = NULL;
-    Scr->DefaultFontSet.name = DEFAULT_FAST_FONT;
+    Scr->TitleBarFont.font = NULL;
+    Scr->TitleBarFont.name = DEFAULT_NICE_FONT;
+    Scr->MenuFont.font = NULL;
+    Scr->MenuFont.name = DEFAULT_NICE_FONT;
+    Scr->IconFont.font = NULL;
+    Scr->IconFont.name = DEFAULT_NICE_FONT;
+    Scr->SizeFont.font = NULL;
+    Scr->SizeFont.name = DEFAULT_FAST_FONT;
+    Scr->IconManagerFont.font = NULL;
+    Scr->IconManagerFont.name = DEFAULT_NICE_FONT;
+    Scr->DefaultFont.font = NULL;
+    Scr->DefaultFont.name = DEFAULT_FAST_FONT;
 
 }
 
 
 CreateFonts ()
 {
-    GetFont(&Scr->TitleBarFontSet);
-    GetFont(&Scr->MenuFontSet);
-    GetFont(&Scr->IconFontSet);
-    GetFont(&Scr->SizeFontSet);
-    GetFont(&Scr->IconManagerFontSet);
-    GetFont(&Scr->DefaultFontSet);
+    GetFont(&Scr->TitleBarFont);
+    GetFont(&Scr->MenuFont);
+    GetFont(&Scr->IconFont);
+    GetFont(&Scr->SizeFont);
+    GetFont(&Scr->IconManagerFont);
+    GetFont(&Scr->DefaultFont);
     Scr->HaveFonts = TRUE;
 }
 
@@ -774,7 +760,7 @@ Time time;
 	}
     }
 
-    XUngrabServer (dpy); 
+    XUngrabServer (dpy);
     SetFocus ((TwmWindow*)NULL, time);
 }
 

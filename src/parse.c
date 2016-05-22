@@ -40,26 +40,23 @@
 #include <X11/Xos.h>
 #include <X11/Xmu/CharSet.h>
 #include "twm.h"
-#include <X11/wchar.h>
 #include "screen.h"
 #include "menus.h"
 #include "util.h"
 #include "gram.h"
 #include "parse.h"
 #include <X11/Xatom.h> 
-#include <X11/Xlocale.h>
 
-#define X11_LIB_DIR "/usr/lib/X11"
-#define TWM_INIT_DIR "/twm/system.twmrc"
-
+#ifndef SYSTEM_INIT_FILE
+#define SYSTEM_INIT_FILE "/usr/lib/X11/twm/system.twmrc"
+#endif
 #define BUF_LEN 300
 
 static FILE *twmrc;
 static int ptr = 0;
 static int len = 0;
-static char buff[BUF_LEN + 1];
-static wchar_t *wcbuff = NULL;
-static wchar_t overflowbuff[20];	/* really only need one */
+static char buff[BUF_LEN+1];
+static char overflowbuff[20];		/* really only need one */
 static int overflowlen;
 static char **stringListSource, *currentString;
 static int ParseUsePPosition();
@@ -69,12 +66,10 @@ extern int mods;
 
 int ConstrainedMoveTime = 400;		/* milliseconds, event times */
 
-static wchar_t twmFileInput();
-static int twmStringListInput();
+static int twmFileInput(), twmStringListInput();
 void twmUnput();
 int (*twmInputFunc)();
 
-extern wchar_t *convert_mbtowc();
 extern char *defTwmrc[];		/* default bindings */
 
 
@@ -97,7 +92,7 @@ static int doparse (ifunc, srctypename, srcname)
     mods = 0;
     ptr = 0;
     len = 0;
-    yylineno = 0;
+    yylineno = 1;
     ParseError = FALSE;
     twmInputFunc = ifunc;
     overflowlen = 0;
@@ -117,10 +112,9 @@ static int doparse (ifunc, srctypename, srcname)
 int ParseTwmrc (filename)
     char *filename;
 {
-    int i, j;
+    int i;
     char *home = NULL;
-    char *locale, tmplocale[64];
-    char *lastdot;
+    int homelen = 0;
     char *cp = NULL;
     char tmpfilename[257];
 
@@ -128,88 +122,33 @@ int ParseTwmrc (filename)
      * If filename given, try it, else try ~/.twmrc.# then ~/.twmrc.  Then
      * try system.twmrc; finally using built-in defaults.
      */
-    for (twmrc = NULL, i = 0; !twmrc && i < 10; i++) {
+    for (twmrc = NULL, i = 0; !twmrc && i < 4; i++) {
 	switch (i) {
 	  case 0:			/* -f filename */
 	    cp = filename;
 	    break;
 
-	  case 1:			/* ~/LANG(full)/.twmrc.screennum */
+	  case 1:			/* ~/.twmrc.screennum */
 	    if (!filename) {
 		home = getenv ("HOME");
-		locale = setlocale(LC_ALL, NULL);
-		strcpy(tmplocale, locale);
-		if ((lastdot = rindex(tmplocale, '.')) == NULL) {
-		    tmplocale[0] = '\0';
-		} else {
-		    *lastdot = '\0';
-		}
 		if (home) {
+		    homelen = strlen (home);
 		    cp = tmpfilename;
-		    (void) sprintf (tmpfilename, "%s/%s/.twmrc.%d",
-				    home, locale, Scr->screen);
+		    (void) sprintf (tmpfilename, "%s/.twmrc.%d",
+				    home, Scr->screen);
 		    break;
 		}
 	    }
 	    continue;
 
-	  case 2:			/* ~/locale(full)/.twmrc */
+	  case 2:			/* ~/.twmrc */
 	    if (home) {
-		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
-		    *lastdot = '\0';
-		    break;
-		}
+		tmpfilename[homelen + 7] = '\0';
 	    }
-	    continue;
-
-  	  case 3:		/* ~/locale(non_codeset)/.twmrc.screennum */
-	    if (home && tmplocale[0] != '\0') {
-		(void) sprintf (tmpfilename, "%s/%s/.twmrc.%d",
-				home, tmplocale, Scr->screen);
-		break;
-	    }
-	    continue;
-
-  	  case 4:		/* ~/locale(non_codeset)/.twmrc */
-	    if (home && tmplocale[0] != '\0') {
-		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
-		    *lastdot = '\0';
-		    break;
-		}
-	    }
-	    continue;
-
-	  case 5:			/* ~/.twmrc.screennum */
-	    if (home) {
-		(void) sprintf (tmpfilename, "%s/.twmrc.%d",
-				home, Scr->screen);
-		break;
-	    }
-	    continue;
-		
- 	  case 6:			/* ~/.twmrc */
-	    if (home) {
-		if ((lastdot = rindex(tmpfilename, '.')) != NULL) {
-		    *lastdot = '\0';
-		    break;
-		}
-	    }
-	    continue;
-
-	  case 7:		/* X11_LIB_DIR/locale(full)/twm/system.twmrc */
-	    sprintf(tmpfilename, "%s/%s%s",
-		    X11_LIB_DIR, locale, TWM_INIT_DIR);
 	    break;
 
-	  case 8:	/* X11_LIB_DIR/locale(non_codeset)/twm/system.twmrc */
-	    if (tmplocale[0] != NULL) 
-		sprintf(tmpfilename, "%s/%s%s",
-			X11_LIB_DIR, tmplocale, TWM_INIT_DIR);
-	    break;
-	   
-	  case 9:	/* X11_LIB_DIR/twm/system.twmrc */
-	    sprintf (tmpfilename, "%s%s",
-		     X11_LIB_DIR, TWM_INIT_DIR);
+	  case 3:			/* system.twmrc */
+	    cp = SYSTEM_INIT_FILE;
 	    break;
 	}
 
@@ -257,25 +196,22 @@ int ParseStringList (sl)
  ***********************************************************************
  */
 
-wchar_t twmFileInput()
+static int twmFileInput()
 {
-    if (overflowlen) return (overflowbuff[--overflowlen]);
+    if (overflowlen) return (int) overflowbuff[--overflowlen];
 
-    while (ptr == len) {
-	if (wcbuff)
-	    free(wcbuff);
-	if (fgets(buff, BUF_LEN, twmrc) == NULL) {
+    while (ptr == len)
+    {
+	if (fgets(buff, BUF_LEN, twmrc) == NULL)
 	    return 0;
-	}
-	wcbuff = convert_mbtowc(buff);
+
 	yylineno++;
 
 	ptr = 0;
-	len = wcslen(wcbuff); 
+	len = strlen(buff);
     }
-    return (wcbuff[ptr++]);
+    return ((int)buff[ptr++]);
 }
-
 
 static int twmStringListInput()
 {
@@ -307,10 +243,10 @@ static int twmStringListInput()
  */
 
 void twmUnput (c)
-    wchar_t c;
+    int c;
 {
     if (overflowlen < sizeof overflowbuff) {
-	overflowbuff[overflowlen++] = c;
+	overflowbuff[overflowlen++] = (char) c;
     } else {
 	twmrc_error_prefix ();
 	fprintf (stderr, "unable to unput character (%d)\n",
@@ -376,11 +312,11 @@ typedef struct _TwmKeyword {
 #define kw0_WarpUnmapped		25
 
 #define kws_UsePPosition		1
-#define kws_IconFontSet			2
-#define kws_ResizeFontSet		3
-#define kws_MenuFontSet			4
-#define kws_TitleFontSet		5
-#define kws_IconManagerFontSet		6
+#define kws_IconFont			2
+#define kws_ResizeFont			3
+#define kws_MenuFont			4
+#define kws_TitleFont			5
+#define kws_IconManagerFont		6
 #define kws_UnknownIcon			7
 #define kws_IconDirectory		8
 #define kws_MaxWindowSize		9
@@ -520,12 +456,12 @@ static TwmKeyword keytable[] = {
     { "iconbordercolor",	CLKEYWORD, kwcl_IconBorderColor },
     { "iconborderwidth",	NKEYWORD, kwn_IconBorderWidth },
     { "icondirectory",		SKEYWORD, kws_IconDirectory },
-    { "iconfontset",		SKEYWORD, kws_IconFontSet },
+    { "iconfont",		SKEYWORD, kws_IconFont },
     { "iconforeground",		CLKEYWORD, kwcl_IconForeground },
     { "iconifybyunmapping",	ICONIFY_BY_UNMAPPING, 0 },
     { "iconmanagerbackground",	CLKEYWORD, kwcl_IconManagerBackground },
     { "iconmanagerdontshow",	ICONMGR_NOSHOW, 0 },
-    { "iconmanagerfontset",	SKEYWORD, kws_IconManagerFontSet },
+    { "iconmanagerfont",	SKEYWORD, kws_IconManagerFont },
     { "iconmanagerforeground",	CLKEYWORD, kwcl_IconManagerForeground },
     { "iconmanagergeometry",	ICONMGR_GEOMETRY, 0 },
     { "iconmanagerhighlight",	CLKEYWORD, kwcl_IconManagerHighlight },
@@ -544,7 +480,7 @@ static TwmKeyword keytable[] = {
     { "maxwindowsize",		SKEYWORD, kws_MaxWindowSize },
     { "menu",			MENU, 0 },
     { "menubackground",		CKEYWORD, kwc_MenuBackground },
-    { "menufontset",		SKEYWORD, kws_MenuFontSet },
+    { "menufont",		SKEYWORD, kws_MenuFont },
     { "menuforeground",		CKEYWORD, kwc_MenuForeground },
     { "menushadowcolor",	CKEYWORD, kwc_MenuShadowColor },
     { "menutitlebackground",	CKEYWORD, kwc_MenuTitleBackground },
@@ -577,7 +513,7 @@ static TwmKeyword keytable[] = {
     { "r",			ROOT, 0 },
     { "randomplacement",	KEYWORD, kw0_RandomPlacement },
     { "resize",			RESIZE, 0 },
-    { "resizefontset",		SKEYWORD, kws_ResizeFontSet },
+    { "resizefont",		SKEYWORD, kws_ResizeFont },
     { "restartpreviousstate",	KEYWORD, kw0_RestartPreviousState },
     { "right",			JKEYWORD, J_RIGHT },
     { "righttitlebutton",	RIGHT_TITLEBUTTON, 0 },
@@ -595,7 +531,7 @@ static TwmKeyword keytable[] = {
     { "title",			TITLE, 0 },
     { "titlebackground",	CLKEYWORD, kwcl_TitleBackground },
     { "titlebuttonborderwidth",	NKEYWORD, kwn_TitleButtonBorderWidth },
-    { "titlefontset",		SKEYWORD, kws_TitleFontSet },
+    { "titlefont",		SKEYWORD, kws_TitleFont },
     { "titleforeground",	CLKEYWORD, kwcl_TitleForeground },
     { "titlehighlight",		TITLE_HILITE, 0 },
     { "titlepadding",		NKEYWORD, kwn_TitlePadding },
@@ -772,24 +708,24 @@ int do_string_keyword (keyword, s)
 	    return 1;
 	}
 
-      case kws_IconFontSet:
-	if (!Scr->HaveFonts) Scr->IconFontSet.name = s;
+      case kws_IconFont:
+	if (!Scr->HaveFonts) Scr->IconFont.name = s;
 	return 1;
 
-      case kws_ResizeFontSet:
-	if (!Scr->HaveFonts) Scr->SizeFontSet.name = s;
+      case kws_ResizeFont:
+	if (!Scr->HaveFonts) Scr->SizeFont.name = s;
 	return 1;
 
-      case kws_MenuFontSet:
-	if (!Scr->HaveFonts) Scr->MenuFontSet.name = s;
+      case kws_MenuFont:
+	if (!Scr->HaveFonts) Scr->MenuFont.name = s;
 	return 1;
 
-      case kws_TitleFontSet:
-	if (!Scr->HaveFonts) Scr->TitleBarFontSet.name = s;
+      case kws_TitleFont:
+	if (!Scr->HaveFonts) Scr->TitleBarFont.name = s;
 	return 1;
 
-      case kws_IconManagerFontSet:
-	if (!Scr->HaveFonts) Scr->IconManagerFontSet.name = s;
+      case kws_IconManagerFont:
+	if (!Scr->HaveFonts) Scr->IconManagerFont.name = s;
 	return 1;
 
       case kws_UnknownIcon:
@@ -971,21 +907,19 @@ put_pixel_on_root(pixel)
   int           retFormat;
   unsigned long nPixels, retAfter;                     
   Pixel        *retProp;
-  XTextProperty text_prop;
-
   pixelAtom = XInternAtom(dpy, "_MIT_PRIORITY_COLORS", True);        
-  XGetWindowProperty(dpy, Scr->Root, pixelAtom, 0, 8192,
-                     False, XA_CARDINAL, &retAtom,
-                     &retFormat, &nPixels, &retAfter,
-                     (unsigned char **)&retProp);
+  XGetWindowProperty(dpy, Scr->Root, pixelAtom, 0, 8192, 
+		     False, XA_CARDINAL, &retAtom,       
+		     &retFormat, &nPixels, &retAfter,    
+		     (unsigned char **)&retProp);
 
-  for (i = 0; i < nPixels; i++)
-      if (pixel == retProp[i]) addPixel = 0;
-
-  if (addPixel)
+  for (i=0; i< nPixels; i++)                             
+      if (pixel == retProp[i]) addPixel = 0;             
+                                                         
+  if (addPixel)                                          
       XChangeProperty (dpy, Scr->Root, _XA_MIT_PRIORITY_COLORS,
-		       XA_CARDINAL, 32, PropModeAppend,
-		       (unsigned char *)&pixel, 1);
+		       XA_CARDINAL, 32, PropModeAppend,  
+		       (unsigned char *)&pixel, 1);                       
 }                                                        
 
 /*

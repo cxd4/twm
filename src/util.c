@@ -37,7 +37,6 @@
  ***********************************************************************/
 
 #include "twm.h"
-#include <X11/wchar.h>
 #include "util.h"
 #include "gram.h"
 #include "screen.h"
@@ -559,51 +558,28 @@ char *name;
 }
 
 GetFont(font)
-MyFontSet *font;
+MyFont *font;
 {
+    char *deffontname = "fixed";
+
     if (font->font != NULL)
 	XFreeFont(dpy, font->font);
 
-    GetFontSet(font);
-    if (font->font == NULL) {
-	fprintf (stderr, "%s:  unable to open font list \"%s\"\n",
-		 ProgramName, font->name);
-	if (Scr->DefaultFontSet.name) {
-	    font->name = Scr->DefaultFontSet.name;
-	    GetFontSet(font);
-	    if (font->font == NULL) {
-		fprintf (stderr, "%s:  unable to open font list \"%s\"\n",
-			 ProgramName, font->name);
-		exit(1);
-	    }
+    if ((font->font = XLoadQueryFont(dpy, font->name)) == NULL)
+    {
+	if (Scr->DefaultFont.name) {
+	    deffontname = Scr->DefaultFont.name;
 	}
+	if ((font->font = XLoadQueryFont(dpy, deffontname)) == NULL)
+	{
+	    fprintf (stderr, "%s:  unable to open fonts \"%s\" or \"%s\"\n",
+		     ProgramName, font->name, deffontname);
+	    exit(1);
+	}
+
     }
     font->height = font->font->ascent + font->font->descent;
     font->y = font->font->ascent;
-}
-
-GetFontSet(font)
-MyFontSet *font;
-{
-    char	**missing_charset_list, *def_string;
-    int		missing_charset_count;
-    char	**dummy;
-    XFontStruct **fs_list;
-
-    font->fontset = XCreateFontSet(dpy, font->name,
-                        &missing_charset_list, &missing_charset_count,
-			&def_string);
-    if(missing_charset_count) {
-	int i;
-	for (i = 0; i < missing_charset_count; i++) {
-	    fprintf(stderr,
-		    "%s : unable to open font \"%s\".... \n",
-		    ProgramName, missing_charset_list[i]);
-	}
-	XFreeStringList(missing_charset_list);
-    }
-    XFontsOfFontSet(font->fontset, &fs_list, &dummy);
-    font->font = fs_list[0];
 }
 
 
